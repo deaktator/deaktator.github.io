@@ -1,0 +1,970 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8">
+
+		<title>reveal.js - The HTML Presentation Framework</title>
+
+		<meta name="description" content="A framework for easily creating beautiful presentations using HTML">
+		<meta name="author" content="Ryan Deak">
+
+		<meta name="apple-mobile-web-app-capable" content="yes" />
+		<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
+		<link rel="stylesheet" href="../revealjs/css/reveal.min.css">
+<!-- 
+		<link rel="stylesheet" href="../revealjs/css/theme/default.css" id="theme">
+ -->
+		<link rel="stylesheet" href="../revealjs/css/theme/moon.css" id="theme">
+
+		<!-- For syntax highlighting -->
+		<link rel="stylesheet" href="../revealjs/lib/css/zenburn.css">
+
+		<!-- If the query includes 'print-pdf', include the PDF print sheet -->
+		<script>
+			if( window.location.search.match( /print-pdf/gi ) ) {
+				var link = document.createElement( 'link' );
+				link.rel = 'stylesheet';
+				link.type = 'text/css';
+				link.href = 'css/print/pdf.css';
+				document.getElementsByTagName( 'head' )[0].appendChild( link );
+			}
+		</script>
+
+		<!--[if lt IE 9]>
+		<script src="lib/js/html5shiv.js"></script>
+		<![endif]-->
+
+	</head>
+
+	<body>
+
+		<div class="reveal">
+
+			<!-- Any section element inside of this container is displayed as a slide -->
+			<div class="slides">
+			
+				<section>
+					<h1>Testing in an unsure world</h1>
+					<h3>(Less intimidating than uttering &quot;<em>stochastic</em> &quot;)</h3>
+					<p>
+						<small>Ryan Deak / <a href="http://twitter.com/deaktator">@deaktator</a></small>
+					</p>
+				</section>
+
+				<section>
+					<h2>Topics</h2>
+					<ul>
+						<li><a href="#/2">Topics in A/B Testing</a></li>
+						<li><a href="#/4">Testing distribution similarity</a></li>
+						<li><a href="#/6">Probabilistic probing to determine equality</a></li>
+						<li><a href="#/8">Testing <em>laws</em></a></li>
+					</ul>
+
+					<!-- hit 'S' to bring up presenter window -->
+					<aside class="notes">
+						Some gotchas about A/B Testing.  Look at testing whether two distributions 
+						look the same.  An extension is testing randomness of an RNG.  Look at how
+						many examples to check to ensure we detect errors.
+					</aside>
+				</section>
+
+				<!-- Example of nested vertical slides -->
+				<section>
+					<section>
+						<h2>A/B Testing</h2>
+						<p>
+							Controlled experiment testing the efficacy of treatment versus a control
+							group.
+						</p>
+						<p>
+							There are <em>a lot</em> of gotchas!  If you're not heeding the advice 
+							of Kohavi, <em>et al.</em>, your probably hosing yourself!
+						</p>
+						<p>
+							<small>
+								* Do yourself a favor and head to 
+								  <a href="http://www.exp-platform.com">exp-platform.com</a> after 
+								  reading this presentation.
+							</small>
+						</p>
+					</section>
+					<section>
+						<h2>A/B Testing Advice</h2>
+						<ol>
+							<li>Know what you want to be able to detect (<a href="http://en.wikipedia.org/wiki/Statistical_power">power</a>).</li>
+							<li>Lock in your expectations before starting the test!</li>
+							<li>Don't jump to conclusions (<a href="https://www.youtube.com/watch?v=xRxqY4wuTHw">mat</a>).*</li>
+							<li>Use A/A Testing to validate testing itself.</li>
+						</ol>
+						<p class="fragment">
+							<small>
+								*<em><a href="http://www.exp-platform.com/Documents/2014%20experimentersRulesOfThumb.pdf">Any figure that looks interesting or different is usually wrong!</a></em>
+							</small>
+						</p>
+						
+						<aside class="notes">
+							<ul>
+								<li>We'll look at an example of statistical power later when looking at probabilistic probing.</li>
+								<li>Don't cheat!</li>
+								<li>Don't freak out!</li>
+								<li>Check yourself</li>
+							</ul>
+						</aside>
+					</section>
+					<section>
+						<h2>A/B Testing Gotcha Example</h2>
+						<img height="300px" src="img/wilson_conf_int.png" alt="Chart" />
+						<ul>
+							<li>Actual Data</li>
+							<li>Gray line is effect of treatment.</li>
+							<li>Green / Red lines are 95% CIs.</li>
+							<li>Dotted lines are 95% CIs at end of test.</li>
+						</ul>
+					</section>
+					<section>
+						<h2>A/B Testing Gotcha Example</h2>
+						<img height="300px" src="img/wilson_conf_int.png" alt="Chart" />
+						<ul>
+							<li class="fragment">Results jump around a lot in the first days.</li>
+							<li class="fragment">In the first few days, we might mistakenly think there is a statstically significant effect (<em>red</em>).</li>
+							<li class="fragment">Over time, converges to no effect, stays in CIs (<em>green</em>).</li>
+							<li class="fragment">Actually an A/A test.</li>
+						</ul>
+					</section>
+					<section>
+						<h2>A/B Testing Gotcha Example Explained</h2>
+						<img height="300px" src="img/wilson_conf_int.png" alt="Chart" />
+						<p>
+							The chance of a day's data falling outside the 95% CI at the end of the 
+							experiment is one minus the size of the CI at experiment end divided by 
+							the CI for the day in question.
+						</p>
+					</section>
+					<section>
+						<h2>A/B Testing Gotcha Example Explained</h2>
+						<p>For this example, on the first day:</p>
+						<br />
+						<p>\[1-\frac { size \ of \ interval \ between \ dotted \ lines }{ size \ of \ interval \ between \ solid \ lines } \]</p>
+						<br />
+						<p class="fragment">\[0.76=1-\frac { 0.0021 - -0.0020 }{ 0.0095 - -0.0077 } \]</p>
+						<br />
+						<p class="fragment">Chance of falling outside final confidence based: <b>76%</b></p>
+					</section>
+					<section>
+						<h2>Early Stopping</h2>
+						<ul>
+							<li>
+								If you must consider early stopping, it's important to note that this 
+								fundamentally changes the type of test.  
+							</li>
+							<li>
+								This is actually a <em><b>multiple testing procedure</b></em>.  
+							</li>
+							<li>
+								Requires corrections to the
+								<a href="http://en.wikipedia.org/wiki/Critical_value">critical values</a>.
+							</li>
+						</ul>
+						<br />
+						<br />
+						<p>
+							References
+						</p>
+
+						<ul>
+							<li>
+								<small>
+									<a href="https://www.musc.edu/psychiatry/research/cns/upadhyayareferences/OBrien_1979.pdf"><em>A Multiple Testing Procedure for Clinical Trials.</em> P. O'Brien. and T. Fleming, 1979, Biometrics, Vol. 35, pp. 549-556.</a>
+								</small>
+							</li>
+							<li>
+								<small>
+									<a href="http://www.exp-platform.com/Pages/ControlledExperimentsAtLargeScale.aspx"><em>Online controlled experiments at large scale.</em> R. Kohavi, A. Deng, B. Frasca, T. Walker, Y. Xu, N. Pohlmann, KDD 2013: 1168-1176</a>
+								</small>
+							</li>
+						</ul>
+					</section>
+					
+					
+					<section>
+						<h2>ASIDE: <a href="http://en.wikipedia.org/wiki/Binomial_proportion_confidence_interval#Wilson_score_interval_with_continuity_correction">Wilson confidence intervals</a></h2>
+
+						<p>
+							<small>
+								\[ { w }^{ - }=max\left\{ 0,\frac { 2n\hat { p } +{ { z }_{ \alpha  } }^{ 2 }-\left( { { z }_{ \alpha  } }\sqrt { { { z }_{ \alpha  } }^{ 2 }-\cfrac { 1 }{ n } +4n\hat { p } \left( 1-\hat { p }  \right) +\left( 4\hat { p } -2 \right)  } +1 \right)  }{ 2\left( n+{ { z }_{ \alpha  } }^{ 2 } \right)  }  \right\}  \]
+							</small>
+						</p>
+						<p>
+							<small>
+								\[ { w }^{ + }=min\left\{ 1,\frac { 2n\hat { p } +{ { z }_{ \alpha  } }^{ 2 }+\left( { { z }_{ \alpha  } }\sqrt { { { z }_{ \alpha  } }^{ 2 }-\cfrac { 1 }{ n } +4n\hat { p } \left( 1-\hat { p }  \right) -\left( 4\hat { p } -2 \right)  } +1 \right)  }{ 2\left( n+{ { z }_{ \alpha  } }^{ 2 } \right)  }  \right\} \]
+							</small>
+						</p>
+						<p>
+							\( \hat { p } \) = sample proportion = \( \frac { number \ of \ "successes" }{ number \ of \ events } \)
+						</p>
+						<p>
+							\( n \) = sample size
+						</p>
+						<p>
+							\( { z }_{ \alpha } \) = <a href="http://en.wikipedia.org/wiki/Z_score"><em>z</em>-score</a> for the chosen <a href="http://en.wikipedia.org/wiki/Type_I_and_type_II_errors#Type_I_error">\( \alpha \) level</a>.
+						</p>
+						<p>
+							\( \alpha \) is the allowable false-positive rate (type I error rate)
+						</p>
+					</section>
+					<section>
+						<h2>ASIDE: <a href="http://en.wikipedia.org/wiki/Binomial_proportion_confidence_interval#Jeffreys_interval">Jeffreys confidence intervals</a></h2>
+						<p>
+							I like the Jeffreys interval (<em>but slighly harder to compute</em>).
+						</p>
+						<pre><code class="scala">
+/** Get the Jeffreys confidence interval.
+  * Requires maven dependency: org.apache.commons:commons-math3:3.3
+  * @param n  The number of impressions, attempts, or whatever.
+  * @param s  The number of successes.  s <= n, by definition.
+  * @param alpha  alpha (0.05 creates 95% CI)
+  * @return Tuple of lower and upper bound
+  */
+def jeffreysCI(n: Long, s: Long, alpha: Double = 0.05) = {
+  import org.apache.commons.math3.distribution.BetaDistribution
+  val z = alpha / 2
+  val beta = new BetaDistribution(s + 0.5, n - s + 0.5)
+  (
+    beta.inverseCumulativeProbability(z), 
+    beta.inverseCumulativeProbability(1 - z)
+  )
+}
+						</code></pre>
+					</section>
+					<section>
+						<h2>For More Testing Gotchas Explained ...</h2>
+						<ul>
+							<li>
+								<a href="http://www.exp-platform.com/Pages/ControlledExperimentsAtLargeScale.aspx">
+						  			Kohavi, et al., <em>Trustworthy online controlled experiments: Five puzzling outcomes explained.</em> KDD, 2012. 
+								</a>
+							</li>
+							<li>
+								<a href="http://www.exp-platform.com/Pages/ControlledExperimentsAtLargeScale.aspx">
+						  			Kohavi, et al., <em>Online Controlled Experiments at Large Scale.</em> KDD, 2013. 
+								</a>
+							</li>
+							<li>
+								<a href="http://www.exp-platform.com/Pages/SevenRulesofThumbforWebSiteExperimenters.aspx">
+						  			Kohavi, et al., <em>Seven Rules of Thumb for Web Site Experimenters.</em> KDD, 2014. 
+								</a>
+							</li>
+						</ul>
+					</section>
+				</section>
+
+				<section>
+					<h2>Topics</h2>
+					<ul>
+						<li><a href="#/2"><del>Topics in A/B Testing</del></a></li>
+						<li><a href="#/4">Testing distribution similarity</a></li>
+						<li><a href="#/6">Probabilistic probing to determine equality</a></li>
+						<li><a href="#/8">Testing <em>laws</em></a></li>
+					</ul>
+				</section>
+
+				<section>
+					<section>
+						<h2>Testing distribution similarity</h2>
+						<ul>
+							<li>
+								<em>"Distances"</em>
+								<ul>
+									<li><a href="http://en.wikipedia.org/wiki/Kullback–Leibler_divergence">Kullback-Leibler divergence</a></li>
+									<li><a href="http://en.wikipedia.org/wiki/Jensen–Shannon_divergence">Jensen-Shannon divergence</a></li>
+									<li><a href="http://en.wikipedia.org/wiki/Wasserstein_metric">Wasserstein metric</a> / 
+									    <a href="http://en.wikipedia.org/wiki/Earth_mover's_distance">Earth mover's distance</a></li>
+								</ul>
+							</li>
+							<li>
+								<em>Tests</em>
+								<ul>
+									<li><a href="http://en.wikipedia.org/wiki/Kolmogorov–Smirnov_test">Kolmogorov-Smirnov test</a></li>
+									<li><a href="http://en.wikipedia.org/wiki/Cramér–von_Mises_criterion">Cramér-von Mises test</a></li>
+									<li>Deak test</li>
+								</ul>
+							</li>							
+						</ul>
+					</section>
+					<section>
+						<h2><a href="http://en.wikipedia.org/wiki/Kullback–Leibler_divergence">Kullback-Leibler divergence</a></h2>
+						<h3>Discrete case</h3>
+						<p>
+						\[ { D }_{ KL }\left( P\parallel Q \right) =\sum _{ i }{ \ln { \left( \frac { P\left( i \right)  }{ Q\left( i \right)  }  \right) P\left( i \right)  }  }  \]
+						</p>
+						<br />
+						<h3>Continuous case</h3>
+						\[ { D }_{ KL }\left( P\parallel Q \right) =\int _{ -\infty  }^{ \infty  }{ \ln { \left( \frac { P\left( x \right)  }{ Q\left( x \right)  }  \right) P\left( x \right) dx }  }  \]
+					</section>
+					<section>
+						<h2><a href="http://en.wikipedia.org/wiki/Kullback–Leibler_divergence">KL divergence</a>: What is it?</h2>
+						<p>
+							It is an information-theoretic measure of the difference between probability 
+							distributions \(P\) and \(Q\).
+						</p>
+						<br />
+						<p>
+							Specifically:
+						</p>
+						<blockquote cite="http://en.wikipedia.org/wiki/Kullback–Leibler_divergence">
+						&ldquo;[It's] a measure of the information lost when Q is used to approximate P&rdquo;
+						</blockquote>
+					</section>
+					<section>
+						<h2><a href="http://en.wikipedia.org/wiki/Kullback–Leibler_divergence">KL divergence</a>: What it's not?</h2>
+
+						<p>
+							KL divergence is <em>NOT</em> a:
+						</p>
+						<ul>
+							<li><a href="http://en.wikipedia.org/wiki/Bounded_function">Bounded function</a></li>
+							<li><a href="http://en.wikipedia.org/wiki/Symmetric_function">Symmetric function</a></li>
+							<li><a href="http://en.wikipedia.org/wiki/Metric_(mathematics)">Metric</a></li>
+						</ul>
+					</section>
+					<section>
+						<h2><a href="http://en.wikipedia.org/wiki/Jensen–Shannon_divergence">Jensen–Shannon divergence</a></h2>
+
+						<p>
+							A 
+							<a href="http://en.wikipedia.org/wiki/Symmetric_function">symmetric</a>, 
+							<a href="http://en.wikipedia.org/wiki/Bounded_function">bounded</a> 
+							(proper <a href="http://en.wikipedia.org/wiki/Metric_(mathematics)">metric</a>) 
+							variant of <a href="http://en.wikipedia.org/wiki/Kullback–Leibler_divergence">KL&nbsp;divergence</a>.
+						</p>
+						<br />
+						<p>
+							\[ JSD\left( P\parallel Q \right) =\frac { { D }_{ KL }\left( P\parallel M \right) }{ 2 } + \frac { { D }_{ KL }\left( Q\parallel M \right) }{ 2 } \]
+						</p>
+						<br />
+						<p>
+							where
+						</p>
+						<br />
+						<p>
+							\[ M = \frac{ P + Q }{ 2 } \]
+						</p>
+					</section>
+					<section>
+						<h2><a href="http://en.wikipedia.org/wiki/Jensen–Shannon_divergence">Jensen–Shannon divergence</a></h2>
+
+						<p>
+							When measured in <a href="http://en.wikipedia.org/wiki/Bit">bits</a>: 
+							\( JSD\left( P\parallel Q \right) \in \left[ 0,1 \right] \)
+						</p>
+						<p>
+							When measured in <a href="http://en.wikipedia.org/wiki/Nat_(unit)">nats</a>: 
+							\( JSD\left( P\parallel Q \right) \in \left[ 0,\ln { \left( 2 \right)  }  \right] \)
+						</p>
+						
+						<p>
+							<em>I like</em> \( JSD \) <em>much better than</em> \( D_{ KL } \) <em>because of this!</em>
+						</p>
+					</section>
+					<section>
+						<h2>
+							<a href="http://en.wikipedia.org/wiki/Wasserstein_metric">Wasserstein&nbsp;metric</a> /
+							<a href="http://en.wikipedia.org/wiki/Earth_mover's_distance">Earth&nbsp;mover's&nbsp;distance</a>
+						</h2>
+						
+						<blockquote cite="http://en.wikipedia.org/wiki/Wasserstein_metric">
+						&ldquo;Intuitively, if each distribution is viewed as a unit amount of "dirt"
+							piled on M, the metric is the minimum "cost" of turning one pile into 
+							the other, which is assumed to be the amount of dirt that needs to be 
+							moved times the distance it has to be moved.&rdquo;
+						</blockquote>
+					</section>
+					<section>
+						<h2>Aside: <em><a href="http://user.informatik.uni-goettingen.de/~krieck/">Konrad Rieck</a> is Cool!</em></h2>
+
+						<ul>
+							<li><a href="http://user.informatik.uni-goettingen.de/~krieck/docs/2008-jmlr.pdf">Rieck and Laskov, <em>Linear-Time Computation of Similarity Measures for Sequential Data</em>. JMLR, 2008.</a></li>
+							<li><a href="http://user.informatik.uni-goettingen.de/~krieck/docs/2007-nips.pdf">Rieck, Laskov, and Sonnenburg, <em>Computation of Similarity Measures for Sequential Data using Generalized Suffix Trees</em>. NIPS, 2007.</a></li>
+							<li><a href="http://user.informatik.uni-goettingen.de/~krieck/docs/2011-dmkd.pdf">Konrad Rieck, <em>Similarity Measures for Sequential Data</em>. WIREs: Data Mining and Knowledge Discovery, 2011.</a></li>
+						</ul>
+					</section>
+					<section>
+						<h2>Tests</h2>
+						<ul>
+							<li><a href="http://en.wikipedia.org/wiki/Kolmogorov–Smirnov_test">Kolmogorov-Smirnov test</a></li>
+							<li><a href="http://en.wikipedia.org/wiki/Cramér–von_Mises_criterion">Cramér-von Mises test</a></li>
+							<li>Deak test</li>
+						</ul>
+					</section>
+					<section>
+						<h2><a href="http://en.wikipedia.org/wiki/Kolmogorov–Smirnov_test">Kolmogorov-Smirnov test</a></h2>
+						
+						<p>
+							Lot's of math, simple concept.
+						</p>
+						<p>
+							Is the <em>KS stat</em>, \( D_{ n,n^{ \prime } } \), above the threshold for the desired <a href="http://en.wikipedia.org/wiki/Type_I_and_type_II_errors#Type_I_error">\( \alpha \)</a>?
+						</p>
+						<p>
+							If so, the distributions are not the same.
+						</p>
+						<pre><code class="scala">
+// Cumulative distribution function, given a PDF (or PMF)
+def cdf(pdf: Seq[Double]) = pdf.scanLeft(0.0)(_+_).tail
+
+// Computes the Kolmogorov-Smirnov stat between two PDFs, p and q.
+// Not the most efficient.  Don't use this in prod!
+def kolmogorovSmirnovStatistic(p: Seq[Double], q: Seq[Double]) =
+  (cdf(p) zip cdf(q)).map{ case(pi, qi) => math.abs(pi - qi) }.max
+						</code></pre>						
+					</section>
+					<section>
+						<h2><a href="http://en.wikipedia.org/wiki/Kolmogorov–Smirnov_test#Two-sample_Kolmogorov.E2.80.93Smirnov_test">Kolmogorov-Smirnov Threshold</a></h2>
+						
+						<p>
+							\[ D_{ n,n^{ \prime } } > c\left(\alpha\right) \sqrt { \frac { n+{ n }^{ \prime  } }{ n { n }^{ \prime } } }  \]
+						</p>
+						<p>
+							where \(n\) and \(n^{ \prime }\) are sample sizes of distributions \(P\) and \(Q\)
+						</p>
+						<br />
+						<p>
+							\(c\left(\alpha\right)\) is
+						</p>
+						<br />
+						<table style="margin: 0 auto;">
+						<tbody>
+							<tr>
+								<td>\(\alpha\)</td>
+								<td>0.10</td>
+								<td>0.05</td>
+								<td>0.025</td>
+								<td>0.01</td>
+								<td>0.005</td>
+								<td>0.001</td>
+							</tr>
+							<tr>
+								<td>\(c\left(\alpha\right)\)</td>
+								<td>1.22</td>
+								<td>1.36</td>
+								<td>1.48</td>
+								<td>1.63</td>
+								<td>1.73</td>
+								<td>1.95</td>
+							</tr>
+						</tbody>
+						</table>
+					</section>
+					<section>
+						<h2><a href="http://en.wikipedia.org/wiki/Cramér–von_Mises_criterion">Cramér-von Mises test</a></h2>
+						
+						<p>
+							The <a href="http://en.wikipedia.org/wiki/Cramér–von_Mises_criterion#cite_note-anderson-3">two sample Cramér–von Mises</a>
+							is easier to understand than (the wikipedia page of) the 
+							<a href="http://en.wikipedia.org/wiki/Kolmogorov–Smirnov_test">Kolmogorov-Smirnov test</a>.
+						</p>
+						<br />
+						<p>
+							How out of position are the ranked samples of the two distributions when
+							combined?
+						</p>
+						<br />
+						<p>
+							<b>Gotcha</b>: Assumes no duplicates in data.  This is pretty 
+							reasonable when comparing continuous distributions but is likely 
+							unrealistic for discrete distributions.  Common fix is the 
+							"midrank approach" (<em>Ruymgaart</em>, 1980).
+						</p>
+					</section>
+					<section>
+						<h2>Deak test</h2>
+						<p>
+							Distributions \(P\) and \(Q\) are the same <em>only if</em>
+							\[ JSD\left( P\parallel Q \right) < \alpha\min { { \left( n,{ n }^{ \prime  } \right)  }^{ \beta } } \]
+						</p>
+						<br />
+						<p>
+							\(n\) and \(n^{ \prime }\) are sample sizes of distributions \(P\) and \(Q\). 
+							<br />
+							\(JSD\) is <a href="http://en.wikipedia.org/wiki/Jensen–Shannon_divergence">Jensen-Shannon divergence</a> in bits.
+						</p>
+						<br />
+						<p>
+							Empirically, \(\alpha = 6.0184\), \(\beta = -1.008\) 
+						</p>
+						<br />
+						<p>
+							I think maybe, \( \alpha \overset { ? }{ = } \frac { e\pi  }{ \sqrt { 2 }  } \approx 6.0385 \).
+							<br />
+							I'm not sure about \(\beta\).
+						</p>
+					</section>
+					<section>
+						<h2>Deak test threshold derivation</h2>
+						
+						<ul>
+							<li>
+								FOR \(v\) in 2 .. 11
+								<ul>
+									<li>
+										FOR \(s\) in 1 .. 200
+										<ul>
+											<li>
+												Randomly create a theoretical distribution \( D_{v,s}\) with \(v\) possible values and select associated probabilities randomly
+											</li>
+											<li>
+												FOR \(k\) in \(2^{p}\) for \(p\) in 0 .. 20
+												<ul>
+													<li>
+														Randomly sample \(k\) samples from \( D_{v,s}\) and record the empirical distribution \(E_{v,s,k}\).
+         												Compute and store \( JSD\left(D_{v,s}, E_{v,s,k}\right) \).
+													</li>
+												</ul>
+											</li>
+										</ul>
+									</li>
+									<li>
+									Store the \(\max JSD\) at each value of \(k\) for each value of \(v\).
+									</li>
+								</ul>
+							</li>
+						</ul>
+					</section>
+					<section>
+						<h2>Deak test threshold derivation</h2>
+						<p>
+							At the end of the sampling procedure, we have a bunch of triples (number
+							of values in distribution \(v\), number of samples \(s\) taken from the 
+							distribution, 
+							<a href="http://en.wikipedia.org/wiki/Jensen–Shannon_divergence">Jensen-Shannon divergence</a>).  
+						</p>
+						<br />
+						<p>
+							Determine the power-law relationship via regression.
+						</p>
+					</section>
+					<section>
+						<h2>Deak test</h2>
+						<p>
+							<img width="800" src="img/jsd.png" />
+						</p>
+					</section>
+				</section>
+				<section>
+					<h2>Topics</h2>
+					<ul>
+						<li><a href="#/2"><del>Topics in A/B Testing</del></a></li>
+						<li><a href="#/4"><del>Testing distribution similarity</del></a></li>
+						<li><a href="#/6">Probabilistic probing to determine equality</a></li>
+						<li><a href="#/8">Testing <em>laws</em></a></li>
+					</ul>
+				</section>
+
+				<section>
+					<section>
+						<h2>Probing to determine equality</h2>
+						<ul>
+							<li>
+								We have two sets of corresponding things.
+							</li>
+							<li>
+								We want to compare the corresponding things from the two sets to determine 
+								if the sets are the same.
+							</li>
+							<li>
+								Assume differences (of corresponding items) are 
+								<a href="http://en.wikipedia.org/wiki/Independent_and_identically_distributed_random_variables"><em>i.i.d.</em></a>.
+							</li>
+					</section>
+					<section>
+						<h2>Aside: <em>For the gamblers</em></h2>
+						<blockquote cite="http://www.math.uah.edu/stat/games/Craps.html">
+							<a href="http://www.math.uah.edu/stat/games/Craps.html">
+							  How many dice rolls after the come out until the shooter "seven outs"?
+							</a>
+						</blockquote>
+					</section>
+					<section>
+						<h2>Probing to determine equality</h2>
+						<p>
+							<b>Q</b>: What do you want to be able to detect (<a href="http://en.wikipedia.org/wiki/Effect_size">effect size</a>)?
+						</p>
+						<p class="fragment">
+							<em>e.g.</em>: Errors at a rate of at least \( \frac { 1 }{ 1000000 } \)
+						</p>
+						<p>
+							<b>Q</b>: When I say there's no difference, 
+							<br />what guarantees do we want?
+							<br />(<a href="http://en.wikipedia.org/wiki/Statistical_power">statistical power</a>, <a href="http://en.wikipedia.org/wiki/Sensitivity_and_specificity#Sensitivity">sensitivity</a>)
+						</p>
+						<p class="fragment">
+							<em>e.g.</em>: Guarantee I'm right 99.9% of the time.
+						</p>
+					</section>
+					<section>
+						<h2>Answer: <a href="http://en.wikipedia.org/wiki/Geometric_distribution">Geometric Distribution</a></h2>
+						<p>
+							The geometric distribution is the probability distribution of the number 
+							\( X \) of <a href="http://en.wikipedia.org/wiki/Bernoulli_trial">Bernoulli trials</a> 
+							needed to get one success.
+						</p>
+						<br />
+						<p>
+							<a href="http://en.wikipedia.org/wiki/Cumulative_distribution_function">CDF</a>: 
+							\( F\left( X\le k \right) =1-{ \left( 1-p \right) }^{ k } \)
+						</p>
+						<p>
+							<small>
+								\[ \Leftrightarrow \\ { \left( 1-p \right)  }^{ k }=1-y\\ \Leftrightarrow \\ \log { { \left( 1-p \right)  }^{ k } } =\log { 1-y } \\ \Leftrightarrow \\ k\log { 1-p } =\log { 1-y } \\ \Rightarrow \]
+							</small>
+						</p>
+						<p>
+							<a href="http://en.wikipedia.org/wiki/Cumulative_distribution_function#Inverse_distribution_function_.28quantile_function.29">inverse CDF</a>: 
+							\( F^{ -1 }\left( y \right) =\left\lceil \frac { \log { 1-y }  }{ \log { 1-p }  }  \right\rceil  \)
+						</p>
+					</section>
+					<section>
+						<h2>So, how many samples?</h2>
+						<ol>
+							<li>
+								To detect error rates of at least 1 in 1,000,000.
+							</li>
+							<li>
+								Have a false negative rate ( <a href="http://en.wikipedia.org/wiki/Type_I_and_type_II_errors#Type_II_error">\( \beta \)</a> ) of at most 0.1%?
+							</li>
+						</ol>
+						<br />
+						<br />
+						<p class="fragment">
+							\[\begin{aligned}
+							F^{ -1 }\left( y=0.999;p=\frac { 1 }{ 1000000 }  \right) =\left\lceil \frac { \log { \left( 1-0.999 \right)  }  }{ \log { \left( 1-\frac { 1 }{ 1000000 }  \right)  }  }  \right\rceil   \\
+							F^{ -1 }\left( y=0.999;p=\frac { 1 }{ 1000000 }  \right) =\left\lceil \frac { \log { 0.001 }  }{ \log { 0.999999 }  }  \right\rceil \\
+							\end{aligned} \]
+						</p>
+						<p class="fragment">
+							\( F^{ -1 }\left( y=0.999;p=\frac { 1 }{ 1000000 } \right) \) = 6,907,752
+						</p>
+					</section>
+				</section>
+
+				<section>
+					<h2>Topics</h2>
+					<ul>
+						<li><a href="#/2"><del>Topics in A/B Testing</del></a></li>
+						<li><a href="#/4"><del>Testing distribution similarity</del></a></li>
+						<li><a href="#/6"><del>Probabilistic probing to determine equality</del></a></li>
+						<li><a href="#/8">Testing <em>laws</em></a></li>
+					</ul>
+				</section>
+
+				<section>
+					<section>
+						<h2>Testing <em>laws</em></h2>
+						<p>
+							<b>Q</b>: What's a law?
+						</p>
+						<p class="fragment">
+							<b>A</b>: Something that always holds <br />(\( \forall x\in \Omega \), where \( \Omega \) is the domain).
+						</p>
+						<p class="fragment">
+							<b>Q</b>: Can I have an example?
+						</p>
+						<p class="fragment">
+							<b>A</b>: All functor instances obey <a href="http://www.haskell.org/haskellwiki/Functor">functor laws</a>!
+						</p>
+						<p class="fragment">
+							<b>Q</b>: How do we test always?
+						</p>
+						<p class="fragment">
+							<b>A</b>: Test that random domain instances adhere to the law.
+						</p>
+					</section>
+					<section>
+						<h2>Testing <em>laws</em></h2>
+						<ul>
+							<li>
+								<em><b>One counterexample invalidates the law (on the domain)!</b></em>
+							</li>
+							<li>
+								Testing multiple random instances decreases the possibility of a 
+								non-oracle repeatedly guessing correctly (<em>That's why there is more 
+								than one question on the SAT</em>).  
+							</li>
+							<li>
+								Think <a href="http://en.wikipedia.org/wiki/Zero-knowledge_proof">zero-knowledge proofs</a> 
+								from crytography.
+							</li>
+						</ul>
+					</section>
+					<section>
+						<h2>Aside: <em>What's a</em> <a href="http://en.wikipedia.org/wiki/Zero-knowledge_proof">Z-K proof</a>?</h2>
+
+						<h3><a href="http://www.sans.org/reading-room/whitepapers/vpns/identification-zero-knowledge-protocols-719">Tree Example</a></h3>
+						<p>
+							<img height="300px" src="img/child_blindfold.jpg" alt="blindfold" />
+							<img height="300px" src="img/child_pick_leaf.jpg" alt="leaf" />
+						</p>
+					</section>
+					<section>
+						<h2>Aside: <em>What's a</em> <a href="http://en.wikipedia.org/wiki/Zero-knowledge_proof">Z-K proof</a>?</h2>
+
+						<h3><a href="http://en.wikipedia.org/wiki/Zero-knowledge_proof#Abstract_example">Cave Example</a></h3>
+						<p>
+							<img height="200px" src="img/Zkip_alibaba1.png" alt="alibaba 1" />
+							<img height="200px" src="img/Zkip_alibaba2.png" alt="alibaba 1" />
+							<img height="200px" src="img/Zkip_alibaba3.png" alt="alibaba 1" />
+						</p>
+					</section>
+					<section>
+						<h2>Testing <em>laws</em></h2>
+						<p>
+							Look at projects like <a href="http://typelevel.org/projects/scalaz">scalaz</a> and how they <a href="https://github.com/scalaz/scalaz/blob/series/7.1.x/tests/src/test/scala/scalaz/FunctorTest.scala">test functors</a>.
+						</p>
+						<p>
+							They use projects like <a href="http://www.scalacheck.org">ScalaCheck</a>.
+						</p>
+						<p>
+							So what's <a href="http://www.scalacheck.org">ScalaCheck</a>?
+						</p>
+					</section>
+					<section>
+						<h2>So What's <a href="http://www.scalacheck.org">ScalaCheck</a>?</h2>
+						<blockquote cite="https://github.com/rickynils/scalacheck/wiki/User-Guide">
+						&ldquo;ScalaCheck is a tool for testing Scala and Java programs, based on 
+						property specifications and automatic test data generation.&rdquo;
+						</blockquote>
+					</section>
+					<section>
+						<h2>So What's <a href="http://www.scalacheck.org">ScalaCheck</a>?</h2>
+						<blockquote cite="https://github.com/rickynils/scalacheck/wiki/User-Guide">
+						&ldquo;The basic idea is that you define a property that specifies the 
+						behaviour of a method or some unit of code, and ScalaCheck checks that 
+						the property holds.&rdquo;
+						</blockquote>
+					</section>
+					<section>
+						<h2>So What's <a href="http://www.scalacheck.org">ScalaCheck</a>?</h2>
+						<blockquote cite="https://github.com/rickynils/scalacheck/wiki/User-Guide">
+						&ldquo;All test data are generated automatically in a random fashion, so you 
+						don't have to worry about any missed cases.&rdquo;
+						</blockquote>
+						<br />
+						<p class="fragment">
+							<em>This is cool stuff.  You should use this!</em>
+						</p>
+					</section>
+					<section>
+						<h2>Testing objective functions</h2>
+						<p>
+							Recently, I (<em>re</em>)discovered a few ways to change 
+							the objective function for bipartite matching to provide some more 
+							desirable behaviors.
+						</p>
+						<br />
+						<p class="fragment">
+							<em>more matches, more people getting matches, etc.</em>
+						</p>
+					</section>
+					<section>
+						<h2>Testing objective functions</h2>
+						<p>
+							We can rigorously prove optimality, but: 
+						</p>
+						<blockquote cite="http://www.exp-platform.com/documents/puzzlingoutcomesincontrolledexperiments.pdf">
+							&ldquo;the difference between theory and practice is greater in practice than in theory.&rdquo;
+						</blockquote>
+					</section>
+					<section>
+						<h2>Testing objective functions</h2>
+						<h3>
+							How can we test the code?
+						</h3>
+						<p class="fragment">
+							<b>Randomly!</b> <em class="fragment">(Seriously?, pay attention!)</em>
+						</p>
+					</section>
+					<section>
+						<h2>Testing objective functions <br /> for bipartite matching</h2>
+						<h3>Constructing the graph</h3>
+						<ol>
+							<li>
+								Randomly construct a 
+								<a href="http://en.wikipedia.org/wiki/Complete_bipartite_graph">complete bipartite graph</a> 
+								with the desired number of nodes on the left and right.
+							</li>
+							<li>
+								Randomly assign integer-valued edge weights with the desired integer range.
+							</li>
+							<li>
+								Randomly shuffle edges list and remove the first <em>K</em> edges to 
+								achieve the desired 
+								<a href="http://en.wikipedia.org/wiki/Dense_graph">graph density</a>.
+							</li>
+							<li>
+								Remove any vertices with 
+								<a href="http://en.wikipedia.org/wiki/Indegree#Indegree_and_outdegree">indegree</a> or
+								<a href="http://en.wikipedia.org/wiki/Indegree#Indegree_and_outdegree">outdegree</a> 
+								0.
+							</li>
+						</ol>
+					</section>
+					<section>
+						<h2>Testing objective functions <br /> for bipartite matching</h2>
+						<ol>
+							<li>
+								<b>FOR EACH</b> test, \( i \in \left\{ 1,2,\dots ,N \right\} \) :
+								<ol>
+									<li>
+										generate a random graph \( G_{ i } \), via the <a href="#/8/11">previous slide</a>.
+									</li>
+									<li>
+										\( S_{ i } \leftarrow \) <em>randomly perturbed optimization over</em> \( G_{ i } \)
+									</li>
+									<li>
+										<b>FOR EACH</b> objective function under test, \( F \):
+										<ol>
+											<li>
+												\( { G }_{ i,F }^{ \prime }\leftarrow \) optimize over \( G_{ i } \) for \( F \) (where \( { G }_{ i,F }^{ \prime } \subseteq G_{ i } \)).
+											</li>
+											<li>
+												\( S_{ i } \leftarrow S_{ i } \cup { G }_{ i,F }^{ \prime } \)
+											</li>
+										</ol>
+									</li>
+									<li>
+										<b>FOR EACH</b> \( { G }_{ i,F }^{ \prime } \in S_{ i } \):
+										<ol>
+											<li>
+												<b>IF</b> for the criterion, \( C_{ F } \) that \( F \) 
+												should optimize, \( { G }_{ i,F }^{ \prime  }\notin arg\max { { C }_{ F }\left( { G }_{ i } \right) } \)
+											</li>
+											<li>
+												<b>THEN RETURN</b> <em>FAIL</em>
+											</li>
+										</ol>
+									</li>
+								</ol>
+							</li>
+							<li>
+								<b>RETURN</b> <em>SUCCESS</em>
+							</li>
+						</ol>
+					</section>
+					<section>
+						<h2>Testing objective functions <br /> for bipartite matching</h2>
+						<h3>
+							So what have we done?
+						</h3>
+						<p class="fragment">
+							We checked \( N \) times that the optimization functions are truly the 
+							best at what they are supposed to do.  We checked all of the algorithms 
+							objective functions against each other and checked them all against a 
+							random objective function.
+						</p>
+						<br />
+						<p class="fragment">
+							Each random test gets us a little closer to believing that our objective
+							functions work as desired.
+						</p>
+						<br />
+						<p class="fragment">
+							<b><em>
+								If any test fails, we know the optimization function doesn't really 
+								truly work as expected!
+							</em></b>
+						</p>
+					</section>
+				</section>
+				
+				<section>
+					<h2>Topics</h2>
+					<ul>
+						<li><a href="#/2"><del>Topics in A/B Testing</del></a></li>
+						<li><a href="#/4"><del>Testing distribution similarity</del></a></li>
+						<li><a href="#/6"><del>Probabilistic probing to determine equality</del></a></li>
+						<li><a href="#/8"><del>Testing <em>laws</em></a></del></li>
+					</ul>
+				</section>
+
+				<section>
+					<h2>Wrap Up</h2>
+					<h3>Showed a bunch of situations involving:</h3>
+					<ol>
+						<li><b><em>Non-random</em></b> testing of <em><a href="http://en.wikipedia.org/wiki/Pseudorandomness">(pseudo) randomized</a></em> behaviors.</li>
+						<li><em><a href="http://en.wikipedia.org/wiki/Pseudorandomness">(Pseudo) randomized</a></em></b> testing of <b><em>non-random</em></b> behaviors.</li>
+					</ol>
+
+					<br /><br />
+					<p>
+						<small>
+							For more, see:
+							<a href="http://ocw.mit.edu/courses/electrical-engineering-and-computer-science/6-00sc-introduction-to-computer-science-and-programming-spring-2011/unit-2/lecture-16-using-randomness-to-solve-non-random-problems/">Using&nbsp;Randomness&nbsp;to&nbsp;Solve&nbsp;Non-random&nbsp;Problems</a>
+							at <a href="http://ocw.mit.edu/index.htm">MIT Open Courseware</a>.
+						</small>
+					</p>
+				</section>
+
+				<section>
+					<h1>Thanks!</h1>
+				</section>
+
+				<section>
+					<h1>Questions?</h1>
+				</section>
+
+				<section>
+					<h1>THE END</h1>
+					<h3>Ryan Deak / <a href="http://twitter.com/deaktator">@deaktator</h3>
+				</section>
+			</div>
+
+		</div>
+
+		<script src="../revealjs/lib/js/head.min.js"></script>
+		<script src="../revealjs/js/reveal.min.js"></script>
+
+		<script>
+
+			// Full list of configuration options available here:
+			// https://github.com/hakimel/reveal.js#configuration
+			Reveal.initialize({
+				controls: true,
+				progress: true,
+				history: true,
+				center: true,
+				slideNumber: true,
+
+				theme: Reveal.getQueryHash().theme, // available themes are in /css/theme
+				transition: 'fade', // default/cube/page/concave/zoom/linear/fade/none
+//				transition: Reveal.getQueryHash().transition || 'default', // default/cube/page/concave/zoom/linear/fade/none
+				transitionSpeed: 'slow', // default/fast/slow
+
+
+				// Parallax scrolling
+				// parallaxBackgroundImage: 'https://s3.amazonaws.com/hakim-static/reveal-js/reveal-parallax-1.jpg',
+				// parallaxBackgroundSize: '2100px 900px',
+
+				math: {
+					// mathjax: 'http://cdn.mathjax.org/mathjax/latest/MathJax.js',
+					config: 'TeX-AMS_HTML-full'
+				},
+
+				// Optional libraries used to extend on reveal.js
+				dependencies: [
+					{ src: '../revealjs/lib/js/classList.js', condition: function() { return !document.body.classList; } },
+					{ src: '../revealjs/plugin/markdown/marked.js', condition: function() { return !!document.querySelector( '[data-markdown]' ); } },
+					{ src: '../revealjs/plugin/markdown/markdown.js', condition: function() { return !!document.querySelector( '[data-markdown]' ); } },
+					{ src: '../revealjs/plugin/highlight/highlight.js', async: true, callback: function() { hljs.initHighlightingOnLoad(); } },
+// 					{ src: '../revealjs/plugin/zoom-js/zoom.js', async: true, condition: function() { return !!document.body.classList; } },
+					{ src: '../revealjs/plugin/notes/notes.js', async: true, condition: function() { return !!document.body.classList; } },
+					{ src: '../revealjs/plugin/math/math.js', async: true }
+				]
+			});
+
+		</script>
+
+	</body>
+</html>
