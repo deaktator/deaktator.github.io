@@ -48,7 +48,6 @@
 			
 				<section>
 					<h1>Testing in an unsure world</h1>
-					<h3>(Less intimidating than uttering &quot;<em>stochastic</em> &quot;)</h3>
 					<p>
 						<small>Ryan Deak / <a href="http://twitter.com/deaktator">@deaktator</a></small>
 					</p>
@@ -61,6 +60,7 @@
 						<li><a href="#/4">Testing distribution similarity</a></li>
 						<li><a href="#/6">Probabilistic probing to determine equality</a></li>
 						<li><a href="#/8">Testing <em>laws</em></a></li>
+						<li><a href="#/10">Salts and seeds</a></li>
 					</ul>
 
 					<!-- hit 'S' to bring up presenter window -->
@@ -268,6 +268,7 @@ def jeffreysCI(n: Long, s: Long, alpha: Double = 0.05) = {
 						<li><a href="#/4">Testing distribution similarity</a></li>
 						<li><a href="#/6">Probabilistic probing to determine equality</a></li>
 						<li><a href="#/8">Testing <em>laws</em></a></li>
+						<li><a href="#/10">Salts and seeds</a></li>
 					</ul>
 				</section>
 
@@ -285,11 +286,11 @@ def jeffreysCI(n: Long, s: Long, alpha: Double = 0.05) = {
 								</ul>
 							</li>
 							<li>
-								<em>Tests</em>
+								<em>(<a href="http://en.wikipedia.org/wiki/Nonparametric_statistics">Nonparameteric</a> <a href="http://en.wikipedia.org/wiki/Goodness_of_fit">Goodness of fit</a>) Tests</em>
 								<ul>
 									<li><a href="http://en.wikipedia.org/wiki/Kolmogorov–Smirnov_test">Kolmogorov-Smirnov test</a></li>
 									<li><a href="http://en.wikipedia.org/wiki/Cramér–von_Mises_criterion">Cramér-von Mises test</a></li>
-									<li>Deak test</li>
+									<li><a href="#/4/12">Deak test</a></li>
 								</ul>
 							</li>							
 						</ul>
@@ -396,8 +397,14 @@ def jeffreysCI(n: Long, s: Long, alpha: Double = 0.05) = {
 						<ul>
 							<li><a href="http://en.wikipedia.org/wiki/Kolmogorov–Smirnov_test">Kolmogorov-Smirnov test</a></li>
 							<li><a href="http://en.wikipedia.org/wiki/Cramér–von_Mises_criterion">Cramér-von Mises test</a></li>
-							<li>Deak test</li>
+							<li><a href="#/4/12">Deak test</a></li>
 						</ul>
+						<br /> <br />
+						<p>
+							<small>
+								And other <a href="http://en.wikipedia.org/wiki/Goodness_of_fit">goodness of fit</a> tests.
+							</small>
+						</p>
 					</section>
 					<section>
 						<h2><a href="http://en.wikipedia.org/wiki/Kolmogorov–Smirnov_test">Kolmogorov-Smirnov test</a></h2>
@@ -560,6 +567,7 @@ def kolmogorovSmirnovStatistic(p: Seq[Double], q: Seq[Double]) =
 						<li><a href="#/4"><del>Testing distribution similarity</del></a></li>
 						<li><a href="#/6">Probabilistic probing to determine equality</a></li>
 						<li><a href="#/8">Testing <em>laws</em></a></li>
+						<li><a href="#/10">Salts and seeds</a></li>
 					</ul>
 				</section>
 
@@ -657,6 +665,7 @@ def kolmogorovSmirnovStatistic(p: Seq[Double], q: Seq[Double]) =
 						<li><a href="#/4"><del>Testing distribution similarity</del></a></li>
 						<li><a href="#/6"><del>Probabilistic probing to determine equality</del></a></li>
 						<li><a href="#/8">Testing <em>laws</em></a></li>
+						<li><a href="#/10">Salts and seeds</a></li>
 					</ul>
 				</section>
 
@@ -885,7 +894,128 @@ def kolmogorovSmirnovStatistic(p: Seq[Double], q: Seq[Double]) =
 						<li><a href="#/2"><del>Topics in A/B Testing</del></a></li>
 						<li><a href="#/4"><del>Testing distribution similarity</del></a></li>
 						<li><a href="#/6"><del>Probabilistic probing to determine equality</del></a></li>
-						<li><a href="#/8"><del>Testing <em>laws</em></a></del></li>
+						<li><a href="#/8"><del>Testing <em>laws</em></del></a></li>
+						<li><a href="#/10">Salts and seeds</a></li>
+					</ul>
+				</section>
+
+				<section>
+					<section>
+						<h2>Salts and seeds</h2>
+						<p>
+							When dealing with <a href="http://en.wikipedia.org/wiki/Pseudorandomness">(pseudo) randomness</a>, it's important to salt
+							(<a href="http://en.wikipedia.org/wiki/Hash_function">hash functions</a>)
+							and seed (<a href="http://en.wikipedia.org/wiki/Random_number_generation">RNGs</a>) 
+							are important.
+						</p>
+						<br />
+						<p>
+							*<em>Don't use Math.random() in prod code (and <b>log the seed</b>!)</em>
+						</p>
+						<br />
+						<p>
+							Seeding allows for repeatability (given sequential code).  Salting, <em>well, we'll 
+							see</em> ...
+						</p>
+					</section>
+					<section>
+						<h2>Where not salting hashes breaks down</h2>
+						<img src="img/rand_conflict.png" />
+						<ul>
+							<li class="fragment">
+								Two levels of <em><a href="http://en.wikipedia.org/wiki/Uniform_distribution_(discrete)">uniform randomization</a></em>.
+							</li>
+							<li class="fragment">
+								4 choices for first random split.</br>2 choices for subsequent random splits.
+							</li>
+							<li class="fragment">
+								<em>rand</em> is a good <a href="http://en.wikipedia.org/wiki/Hash_function">hash function</a>.
+							</li>
+							<li class="fragment">
+								<em>uid</em> is a unique identifier for an entity.
+							</li>
+						</ul>
+					</section>
+					<section>
+						<h2>Where not salting hashes breaks down</h2>
+						<img src="img/rand_conflict.png" />
+						<ul>
+							<p>
+								Choosing one of the two left-most paths at the 1st stage
+								necessitates chossing the left-most path at the 2nd stage.
+							</p>
+							<br />
+							<p>
+								Choosing one of the two right-most paths at the 1st stage
+								necessitates chossing the right-most path at the 2nd stage.
+							</p>
+						</ul>
+					</section>
+					<section>
+						<h2>Where not salting hashes breaks down</h2>
+						<img src="img/rand_conflict.png" />
+						<p>
+							Remember: 
+							<a href="http://en.wikipedia.org/wiki/Independence_(probability_theory)">independent</a>
+							<a href="http://en.wikipedia.org/wiki/If_and_only_if">IFF</a> 
+							\( P\left( A\cap B \right) =P\left( A \right) P\left( B \right) \).
+						</p>
+						<br />
+						<p>
+							Ind. <a href="http://en.wikipedia.org/wiki/If_and_only_if">IFF</a> probabilities = \( \left\{ \frac{1}{8}, \frac{1}{8}, \frac{1}{8}, \frac{1}{8}, \frac{1}{8}, \frac{1}{8}, \frac{1}{8}, \frac{1}{8} \right\}  \)
+						</p>
+						<br />
+						<p>
+							but probabilities = \( \left\{ \frac{1}{4}, 0, \frac{1}{4}, 0, 0, \frac{1}{4}, 0, \frac{1}{4} \right\}  \)
+						</p>
+					</section>
+					<section>
+						<h2>Salted hashes fixes indep. issues</h2>
+						<p>
+							Two seemingly 
+							<a href="http://en.wikipedia.org/wiki/Independence_(probability_theory)">independent</a> 
+							tests are not independent!
+						</p>
+						<br />
+						<blockquote cite="http://en.wikipedia.org/wiki/Kullback–Leibler_divergence">
+							<b>Simple fix</b>: instead of just using a hash function 
+							H(X), to hash X, use additional, unique data (<a href="http://en.wikipedia.org/wiki/Salt_(cryptography)">salt</a>, S) 
+							to create H(X; S).
+						</blockquote>
+						<br />
+						<p>
+							Use a unique salt for each point of randomization.  This provides 
+							independence when composing random behavior.
+						</p>
+					</section>
+					<section>
+						<h2>What a pain, why bother?</h2>
+						<p>
+							Because <em>non-functional</em> 
+							<a href="http://en.wikipedia.org/wiki/Random_number_generation">RNGs</a> 
+							contain <a href="http://en.wikipedia.org/wiki/Immutable_object">mutable state</a>.
+						</p>
+						<br />
+						<p>
+							This means that multi-threaded code that shares RNGs can be 
+							<a href="http://en.wikipedia.org/wiki/Idempotence">non-idempotent</a>
+							because order of executation (across threads) matters.
+						</p>
+						<br />
+						<p>
+							<em><b>This is why I prefer hashing over the use of RNGs!</b></em>
+						</p>
+					</section>
+				</section>
+
+				<section>
+					<h2>Topics</h2>
+					<ul>
+						<li><a href="#/2"><del>Topics in A/B Testing</del></a></li>
+						<li><a href="#/4"><del>Testing distribution similarity</del></a></li>
+						<li><a href="#/6"><del>Probabilistic probing to determine equality</del></a></li>
+						<li><a href="#/8"><del>Testing <em>laws</em></del></a></li>
+						<li><a href="#/10"><del>Salts and seeds</del></a></li>
 					</ul>
 				</section>
 
@@ -895,6 +1025,7 @@ def kolmogorovSmirnovStatistic(p: Seq[Double], q: Seq[Double]) =
 					<ol>
 						<li><b><em>Non-random</em></b> testing of <em><a href="http://en.wikipedia.org/wiki/Pseudorandomness">(pseudo) randomized</a></em> behaviors.</li>
 						<li><em><a href="http://en.wikipedia.org/wiki/Pseudorandomness">(Pseudo) randomized</a></em></b> testing of <b><em>non-random</em></b> behaviors.</li>
+						<li>Gotchas when dealing with random behavior.</li>
 					</ol>
 
 					<br /><br />
