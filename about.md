@@ -15,4 +15,4 @@ for rewarding and penalizing matches edges in bipartite graph max-flow problems.
 [maxflow-problems](https://github.com/deaktator/maxflow-problems) github repo for more information.
 
 Take a look at the slides from my [Testing in an Unsure World]({{site.url}}/presentations/prob-testing) talk I 
-gave at eHarmony.
+gave at [eHarmony](http://www.eharmony.com).
