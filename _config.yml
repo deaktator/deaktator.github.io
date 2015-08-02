@@ -1,0 +1,14 @@
+# Site settings
+title: deaktator
+# email: r.m.deak@gmail.com
+description: > # this means to ignore newlines until "baseurl:"
+  Stats, programming wisdom, general insite
+baseurl: "" # the subpath of your site, e.g. /blog/
+url: "https://deaktator.github.io" # the base hostname & protocol for your site
+twitter_username: deaktator
+github_username:  deaktator
+
+# Build settings
+markdown: kramdown
+
+permalink: /:year/:month/:day/:title/
