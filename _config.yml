@@ -12,3 +12,6 @@ github_username:  deaktator
 markdown: kramdown
 
 permalink: /:year/:month/:day/:title/
+
+gems:
+  - jekyll-sitemap
