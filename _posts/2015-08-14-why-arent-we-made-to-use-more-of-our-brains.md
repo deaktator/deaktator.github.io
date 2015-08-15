@@ -35,13 +35,16 @@ where the first equation indicates a non-linear activation function ( $$\textbf{
 [affine transformation](https://en.wikipedia.org/wiki/Affine_transformation) of the input data.  This forms the data
 at the hidden layer.  In the second equation, the [sigmoid function](https://en.wikipedia.org/wiki/Sigmoid_function) 
 is applied to an affine transformation of the hidden layer values produced by the first equation.  The number of 
-nodes in the input and output layer is the same. Typically, the number of nodes in the hidden layer is less than 
-the number of nodes in the input and output layer, but this is not a requirement by any means.  Pictorially, this
-might look something like:
+nodes in the input and output layer is the same (or the input layer may have an additional 
+[bias unit](https://en.wikipedia.org/wiki/Artificial_neuron#Basic_structure)). Typically, the number of nodes in 
+the hidden layer is less than the number of nodes in the input and output layer, but this is not a requirement 
+by any means.  Autoencoders can also be 
+[stacked](http://deeplearning.net/tutorial/SdA.html#stacked-autoencoders) to form deeper networks. Pictorially, 
+a basic autoencoder might look something like:
 
 ![Autoencoder picture](http://kiyukuta.github.io/_images/autoencoder.png "Autoencoder")
 
-The paper then shows how to modify of the standard autoencoder to create a
+The paper then shows how to modify the standard autoencoder to create a
 [joint probability distribution](https://en.wikipedia.org/wiki/Joint_probability_distribution) estimator.  The first
 step to doing this is recognizing that the probability calculations can be factored into the product of conditional
 probabilities via the [probability product rule](https://en.wikipedia.org/wiki/Chain_rule_\(probability\)):
@@ -51,6 +54,10 @@ $$ p\left( x \right) =\prod _{ d=1 }^{ D }{ p\left( { { x }_{ d } }|{ { \textbf{
 An example of this might be: 
 
 $$ p\left( { x }_{ 1 },{ x }_{ 2 },{ x }_{ 3 } \right) =p\left( { x }_{ 1 } \right) p\left( { { x }_{ 2 } } \mid { x }_{ 1 } \right) p\left( { { x }_{ 3 } } \mid { x }_{ 1 },{ x }_{ 2 } \right) $$  
+
+which means that the probability of the three events co-occurring is the same as the probability of the first event 
+occurring times the probability that the second event occurs assuming the first occurred times the probability that 
+the third event occurs assuming the first two events occurred.
 
 Now, we know what the **ADE** in **MADE** stand for in the paper title, and it's time to expound upon the **M**, 
 which is the real meat of the paper. **M**, as the title 
