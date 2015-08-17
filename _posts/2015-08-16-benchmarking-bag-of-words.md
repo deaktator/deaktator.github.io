@@ -96,6 +96,11 @@ so clear other than parallelizing is worth it.  Using a general purpose *paralle
 is about 10% slower, so if speed really matters, use a specialized *parallel* bag of words implementation.  Otherwise,
 just pass **0** for *skips* and **1** for *gram* size to the skipgrams algorithm, and you're done. 
 
+## Caliper Benchmark
+
+Caliper results are available 
+[here](https://microbenchmarks.appspot.com/runs/9617b19a-b94f-4f57-8c09-464c4e8b4833#r:scenario.benchmarkSpec.methodName,scenario.benchmarkSpec.parameters.size,scenario.vmSpec.properties.java.vm.info).
+
 ## Code
 
 Code is available at [https://github.com/deaktator/skip-grams-bench](https://github.com/deaktator/skip-grams-bench)
