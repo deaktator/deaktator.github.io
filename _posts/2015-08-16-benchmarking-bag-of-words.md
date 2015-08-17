@@ -96,3 +96,7 @@ so clear other than parallelizing is worth it.  Using a general purpose *paralle
 is about 10% slower, so if speed really matters, use a specialized *parallel* bag of words implementation.  Otherwise,
 just pass **0** for *skips* and **1** for *gram* size to the skipgrams algorithm, and you're done. 
 
+## Code
+
+Code is available at [https://github.com/deaktator/skip-grams-bench](https://github.com/deaktator/skip-grams-bench)
+under the [MIT License](https://github.com/deaktator/skip-grams-bench/blob/master/LICENSE).
