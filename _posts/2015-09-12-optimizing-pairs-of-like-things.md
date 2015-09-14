@@ -107,6 +107,15 @@ A working [DIMACS](http://lpsolve.sourceforge.net/5.5/DIMACS_mcf.htm) encoding o
 [non-bipartite](https://github.com/deaktator/maxflow-problems/blob/master/non-bipartite/non_bipartite_4_item_fully_connected.flow) directory
 in my [maxflow-problems](https://github.com/deaktator/maxflow-problems/) github repo. 
 
+#### Number of nodes and arcs
+
+This method requires:
+
+* $$ 2 \lvert V \rvert + 2 $$ *nodes* 
+* $$ \lvert E \rvert + 3 \lvert V \rvert + 1 $$ *edges*
+
+where $$ V $$ is the set of items and $$ E $$ is the set of *potential* pairs. 
+
 ## Applications
 
 This problem has a lot of applications but may be especially relevant in social networks where people are suggested to
