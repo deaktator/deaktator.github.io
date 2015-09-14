@@ -120,7 +120,7 @@ where $$ V $$ is the set of items and $$ E $$ is the set of *potential* pairs.
 
 This problem has a lot of applications but may be especially relevant in social networks where people are suggested to
 people with the intent of maximizing some global quantity in the network.  This could also be used to maximize 
-discounts on items that when purchased together on amazon save money.
+discounts on items that when purchased together on Amazon save money.
 
 ## Extensions
 
