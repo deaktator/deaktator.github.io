@@ -227,6 +227,8 @@ object PoissonBinomial {
 
 > *Use this one:*
 
+#### ***Update**: I now recommend a non-recursive, $$ O\left( n \right) $$ space variant found in* [Poisson Binomial Revisited]({% post_url 2016-02-12-poisson-binomial-revisited %}).
+
 I wrote a java variant of the "*Method 1*" algorithm a few years ago but only used it on a small number of events.
 When testing the code for this article, I noticed a few things, namely the output of the algorithm, on a large number 
 of events, violates [the first two probability axioms](https://en.wikipedia.org/wiki/Probability_axioms), *and not
