@@ -105,16 +105,12 @@ def pmf(pr: Seq[Double], maxN: Int, maxCumPr: Double): Array[Double] = {
 }
 
 def finalizeR(r: Array[Double], i: Int, n: Int) = {
+  val j = r.lastIndexWhere(x => java.lang.Double.isNaN(x) || 
+                                java.lang.Double.isInfinite(x))
+  if (j != -1) 
+    throw new NumberFormatException(s"Numerical overflow detected: r[$j] = ${r(j)}")
+
   if (i <= n) {
-    var j = i
-    while(j >= 0) {
-      if (java.lang.Double.isNaN(r(j)) || 
-          java.lang.Double.isInfinite(r(j))) {
-        throw new NumberFormatException(s"Numerical overflow detected: r[$j] = ${r(j)}")
-      }
-      j -= 1
-    }
-    
     val smallerR = new Array[Double](i)
     System.arraycopy(r, n - i + 1, smallerR, 0, i)
     reverse(smallerR)
