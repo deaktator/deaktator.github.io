@@ -34,7 +34,7 @@ algorithm and if we remove them and appropriately shift the remaining values to 
 diagram become vertical, downward arrows.  This doesn't affect the left-to-right arrows but this gives us a diagram that 
 looks like a triangle.  The fact that we have only downward and right arrows and a triangular shape helps a lot.  It 
 indicates that we can iterate over the rows then columns and use just a one-dimensional array, $$ r $$,  of size 
-$$ n $$ to aggregate the computation because we only need values from the previous iteration of the outer loop and 
+$$ n + 1 $$ to aggregate the computation because we only need values from the previous iteration of the outer loop and 
 the previous value of the current inner loop to update the current value in the inner loop.  This means that we can use
 [bottom-up](https://en.wikipedia.org/wiki/Top-down_and_bottom-up_design)
 [dynamic programming](https://en.wikipedia.org/wiki/Dynamic_programming) to generate the 
@@ -145,8 +145,9 @@ runtime and space requirements: $$ O\left( { n }^{ 2 } \right) $$ and $$ O\left(
 Another comment.  The runtime for computing the full [PMF](https://en.wikipedia.org/wiki/Probability_mass_function) is
 indeed $$ O\left( { n }^{ 2 } \right) $$, but if we just want to know the probabilities for the first $$ k $$ successes,
 the runtime is more like $$ O\left( k n \right) $$.  This is nice since the code was written to short circuit if the
-caller only request the first $$ k $$ probabilities.  The code can also short circuit for using it as an 
-[inverse distribution function](https://en.wikipedia.org/wiki/Cumulative_distribution_function#Inverse_distribution_function_.28quantile_function.29).
+caller only requests the first $$ k $$ probabilities.  The code can also short circuit for using it as an 
+[inverse distribution function](https://en.wikipedia.org/wiki/Cumulative_distribution_function#Inverse_distribution_function_.28quantile_function.29)
+by specifying `maxCumPr`.  The `length - 1` of the resulting array is the *IDF* value. 
 
 ## Tests
 
