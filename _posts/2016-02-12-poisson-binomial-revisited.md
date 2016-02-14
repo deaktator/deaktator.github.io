@@ -65,20 +65,19 @@ There are multiple benefits to writing the algorithm this way:
 {% highlight scala linenos %}
 // Scala Code
 
-def pmf(pr: Seq[Double]): Array[Double] = pmf(pr, pr.size, 2)
+def pmf(pr: TraversableOnce[Double]): Array[Double] = pmf(pr, Int.MaxValue, 2)
 
-def pmf(pr: Seq[Double], maxN: Int, maxCumPr: Double): Array[Double] = {
-  require(0 <= maxN && maxN <= pr.length + 1);
-
-  val n = pr.size
+def pmf(pr: TraversableOnce[Double], maxN: Int, maxCumPr: Double): Array[Double] = {
+  require(0 <= maxN)
   
   // This auxiliary array, w, isn't necessary for the algorithm to
   // work correctly but memoization saves redundant computation.
+  // Since we are using it, we can base all subsequent computation
+  // on w and make pr a TraversableOnce.
   val w = pr.map(p => p / (1 - p)).toIndexedSeq
-
-  // This is an equivalent way to compute the normalizing, 
-  // constant which is just the probability of zero successes.
-  val z = pr.foldLeft(1d)((s, p) => s * (1 - p))
+  val n = w.size
+  val mN = math.min(maxN, n)
+  val z = w.foldLeft(1d)((s, w) => s / (1 + w))
   val r = Array.fill(n + 1)(1d)
   
   r(n) = z
@@ -87,15 +86,11 @@ def pmf(pr: Seq[Double], maxN: Int, maxCumPr: Double): Array[Double] = {
   var j = 0
   var k = 0
   var m = 0
-  var mN = math.min(maxN, n)
   var s = 0d
   var cumPr = r(n)
   
   while(cumPr < maxCumPr && i <= mN) {
-    m = n - i
-    k = i - 1
-    s = 0
-    j = 0
+    s = 0;  j = 0;  m = n - i;  k = i - 1
     
     while (j <= m) {
       s += r(j) * w(k + j)
