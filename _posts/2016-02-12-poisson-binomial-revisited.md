@@ -157,7 +157,7 @@ by specifying `maxCumPr`.  The `length - 1` of the resulting array is the *IDF* 
 
 ## Tests
 
-On my 2010 MacBook Pro, I can run `val p = pmf(Seq.fill(1000)(0.5))` in 0.01877 seconds and it's accurate according 
+On my 2010 MacBook Pro, I can run `val p = pmf(Seq.fill(1000)(0.5))` in about *0.01* seconds and it's accurate according 
 to Wolfram Alpha.  `p(500)` is *0.025225018178360804* and Wolfram Alpha says it's
 [0.025225](http://www.wolframalpha.com/input/?i=PDF(BinomialDistribution(1000,+0.5),+500)).
 
