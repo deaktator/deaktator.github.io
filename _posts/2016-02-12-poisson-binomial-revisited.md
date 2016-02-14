@@ -65,77 +65,86 @@ There are multiple benefits to writing the algorithm this way:
 {% highlight scala linenos %}
 // Scala Code
 
-def pmf(pr: TraversableOnce[Double]): Array[Double] = pmf(pr, Int.MaxValue, 2)
-
-def pmf(pr: TraversableOnce[Double], maxN: Int, maxCumPr: Double): Array[Double] = {
-  require(0 <= maxN)
+object PoissonBinomial {
+  val zero = BigDecimal(0)
+  val one = BigDecimal(1)
   
-  // This auxiliary array, w, isn't necessary for the algorithm to
-  // work correctly but memoization saves redundant computation.
-  // Since we are using it, we can base all subsequent computation
-  // on w and make pr a TraversableOnce.
-  val w = pr.map(p => p / (1 - p)).toIndexedSeq
-  val n = w.size
-  val mN = math.min(maxN, n)
-  val z = w.foldLeft(1d)((s, w) => s / (1 + w))
-  val r = Array.fill(n + 1)(1d)
+  def pmf(pr: TraversableOnce[Double]): Array[BigDecimal] = pmf(pr, Int.MaxValue, 2)
   
-  r(n) = z
-  
-  var i = 1
-  var j = 0
-  var k = 0
-  var m = 0
-  var s = 0d
-  var cumPr = r(n)
-  
-  while(cumPr < maxCumPr && i <= mN) {
-    s = 0;  j = 0;  m = n - i;  k = i - 1
+  def pmf(pr: TraversableOnce[Double], maxN: Int, maxCumPr: Double): Array[BigDecimal] = {
+    require(0 <= maxN)
     
-    while (j <= m) {
-      s += r(j) * w(k + j)
-      r(j) = s
-      j += 1
+    // This auxiliary array, w, isn't necessary for the algorithm to
+    // work correctly but memoization saves redundant computation.
+    // Since we are using it, we can base all subsequent computation
+    // on w and make pr a TraversableOnce.
+    val w = pr.map{p => 
+      val x = BigDecimal(p)
+      x / (1 - x)
+    }.toIndexedSeq
+    val n = w.size
+    val mN = math.min(maxN, n)
+    val z = w.foldLeft(one)((s, w) => s / (w + one))
+    val r = Array.fill(n + 1)(one)
+    
+    r(n) = z
+    
+    var i = 1
+    var j = 0
+    var k = 0
+    var m = 0
+    var s = zero
+    var cumPr = r(n)
+    
+    while(cumPr < maxCumPr && i <= mN) {
+      s = zero;  j = 0;  m = n - i;  k = i - 1
+      
+      while (j <= m) {
+        s += r(j) * w(k + j)
+        r(j) = s
+        j += 1
+      }
+      
+      r(j - 1) *= z
+      cumPr += r(j - 1)
+      
+      i += 1
     }
     
-    r(j - 1) *= z
-    cumPr += r(j - 1)
-    
-    i += 1
+    finalizeR(r, i, n)
   }
   
-  finalizeR(r, i, n)
-}
-
-def finalizeR(r: Array[Double], i: Int, n: Int) = {
-  val j = r.lastIndexWhere(x => java.lang.Double.isNaN(x) || 
-                                java.lang.Double.isInfinite(x))
-  if (j != -1) 
-    throw new NumberFormatException(s"Numerical overflow detected: r[$j] = ${r(j)}")
-
-  if (i <= n) {
-    val smallerR = new Array[Double](i)
-    System.arraycopy(r, n - i + 1, smallerR, 0, i)
-    reverse(smallerR)
+  def finalizeR(r: Array[BigDecimal], i: Int, n: Int) = {
+    if (i <= n) {
+      val smallerR = new Array[BigDecimal](i)
+      System.arraycopy(r, n - i + 1, smallerR, 0, i)
+      reverse(smallerR)
+    }
+    else reverse(r)
   }
-  else reverse(r)
-}
-
-def reverse(a: Array[Double]): Array[Double] = {
-  val n = a.length / 2
-  var i = 0
-  var t = 0d
-  var j = 0
-  while (i <= n) {
-    j = a.length - i - 1
-    t = a(i)
-    a(i) = a(j)
-    a(j) = t
-    i += 1
+  
+  def reverse[A](a: Array[A]): Array[A] = {
+    val n = a.length / 2
+    var i = 0
+    var t = a(0)
+    var j = 0
+    while (i <= n) {
+      j = a.length - i - 1
+      t = a(i)
+      a(i) = a(j)
+      a(j) = t
+      i += 1
+    }
+    a
   }
-  a
 }
 
+def time[A](a : => A) = { 
+  val t1 = System.nanoTime
+  val r = a
+  val t2 = System.nanoTime
+  (r, (1.0e-9*(t2 - t1)).toFloat) 
+}
 {% endhighlight %}
 
 ## Remarks
@@ -157,9 +166,24 @@ by specifying `maxCumPr`.  The `length - 1` of the resulting array is the *IDF* 
 
 ## Tests
 
-On my 2010 MacBook Pro, I can run `val p = pmf(Seq.fill(1000)(0.5))` in about *0.01* seconds and it's accurate according 
-to Wolfram Alpha.  `p(500)` is *0.025225018178360804* and Wolfram Alpha says it's
-[0.025225](http://www.wolframalpha.com/input/?i=PDF(BinomialDistribution(1000,+0.5),+500)).
+On my 2010 MacBook Pro, I can run `val p = PoissonBinomial.pmf(Seq.fill(1000)(0.5))` in about *0.5* seconds and 
+it's accurate according to Wolfram Alpha.  `p(500)` is *0.02522501817836080190684168876210234* and Wolfram Alpha 
+says it's [0.025225](http://www.wolframalpha.com/input/?i=PDF(BinomialDistribution(1000,+0.5),+500)).  `p(1000)` is 
+*9.332636185032188789900895447238125E-302* and Wolfram Alpha says it's 
+[9.33264×10^-302](http://www.wolframalpha.com/input/?i=PDF(BinomialDistribution(1000,+0.5),+1000)).  
+
+What's more important is that the algorithm based on `BigDecimal` can handle large probabilities whereas 
+an implementation based on [64-bit IEEE 754 floats](https://en.wikipedia.org/wiki/IEEE_floating_point) will eventually 
+numerically overflow given a large enough set of probabilities.  Avoiding this obviously comes at a cost.  The cost is 
+unfortunately both in terms of speed and memory.  Because large probabilities make the normalizing constant small
+when there are a lot of probabilities in the computation, the `BigDecimal` values need to add a lot of precision and 
+this is where the speed slowdowns and increased memory usage come in.  So the runtime actually depends somewhat on
+the probability value inputs.  This is OK because when the number of probabilities is small (*< 1000*), the runtime is 
+reasonable (on the order of a few seconds).  But when opting for an exact algorithm over an approximation, correctness
+should always trump speed.  If this is not acceptable, thanks to the 
+[Central limit theorem](https://en.wikipedia.org/wiki/Central_limit_theorem),
+one can always use a (refined) normal approximation 
+(see [Poisson Binomial Distribution]({% post_url 2015-08-09-poisson-binomial-distribution %})).
 
 ## License 
 
