@@ -24,7 +24,7 @@ be quite informative.
 
 This diagram also drove me crazy until I had the epiphany that allowed me to rewrite
 [method 2]({% post_url 2015-08-09-poisson-binomial-distribution %}#method-2) *non-recursively* using only 
-$$ O\left( n \right) $$ rather than $$ O\left( { n }^{ 2 } \right) $$ auxiliary space.  The epiphany was this.  
+$$ O\left( n \right) $$ space rather than $$ O\left( { n }^{ 2 } \right) $$ auxiliary space.  The epiphany was this.  
 
 ## Epiphany
 
@@ -35,8 +35,9 @@ diagram become vertical, downward arrows.  This doesn't affect the left-to-right
 looks like a triangle.  The fact that we have only downward and right arrows and a triangular shape helps a lot.  It 
 indicates that we can iterate over the rows then columns and use just a one-dimensional array, $$ r $$,  of size 
 $$ n + 1 $$ to aggregate the computation because we only need values from the previous iteration of the outer loop and 
-the previous value of the current inner loop to update the current value in the inner loop.  This means that we can use
-[bottom-up](https://en.wikipedia.org/wiki/Top-down_and_bottom-up_design)
+the previous value of the current inner loop to update the current value in the inner loop.  Once the algorithm 
+completes this array will contain the [PMF](https://en.wikipedia.org/wiki/Probability_mass_function). This means 
+that we can use [bottom-up](https://en.wikipedia.org/wiki/Top-down_and_bottom-up_design)
 [dynamic programming](https://en.wikipedia.org/wiki/Dynamic_programming) to generate the 
 [PMF](https://en.wikipedia.org/wiki/Probability_mass_function) for the Poisson binomial distribution.
 At the end of each iteration of the inner loop, we add another value toward the end of the array that represents 
@@ -55,7 +56,8 @@ Finally, we just have to reverse the array, $$ r $$.
 There are multiple benefits to writing the algorithm this way:
 
 1. Stack overflows don't occur.
-1. Memory consumption is greatly reduced from $$ O\left( { n }^{ 2 } \right) $$ to $$ O\left( n \right) $$.
+1. Memory consumption is greatly reduced from $$ O\left( { n }^{ 2 } \right) $$ to $$ O\left( n \right) $$ and the 
+   $$ O\left( n \right) $$ memory allocation is necessary to hold the PMF.
 1. The actual speed of the algorithm is faster (*wall clock, not asymptotic runtime*).
 
 ## Code
@@ -69,7 +71,13 @@ def pmf(pr: Seq[Double], maxN: Int, maxCumPr: Double): Array[Double] = {
   require(0 <= maxN && maxN <= pr.length + 1);
 
   val n = pr.size
+  
+  // This auxiliary array, w, isn't necessary for the algorithm to
+  // work correctly but memoization saves redundant computation.
   val w = pr.map(p => p / (1 - p)).toIndexedSeq
+
+  // This is an equivalent way to compute the normalizing, 
+  // constant which is just the probability of zero successes.
   val z = pr.foldLeft(1d)((s, p) => s * (1 - p))
   val r = Array.fill(n + 1)(1d)
   
@@ -141,6 +149,9 @@ This code doesn't read like typical [Scala](http://scala-lang.org) code because 
 loops* rather than functional constructs like [folds](https://en.wikipedia.org/wiki/Fold_%28higher-order_function%29).
 The purpose was speed and correctness over conciseness and elegance.  This choice stems from the `pmf` algorithm's
 runtime and space requirements: $$ O\left( { n }^{ 2 } \right) $$ and $$ O\left( n \right) $$, respectively.
+
+The memory that is allocated contains the PMF are the end of the algorithm. Thus, no auxiliary space is necessary and
+the algorithm is optimally space efficient.
 
 Another comment.  The runtime for computing the full [PMF](https://en.wikipedia.org/wiki/Probability_mass_function) is
 indeed $$ O\left( { n }^{ 2 } \right) $$, but if we just want to know the probabilities for the first $$ k $$ successes,
