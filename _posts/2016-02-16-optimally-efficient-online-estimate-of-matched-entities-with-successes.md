@@ -1,6 +1,6 @@
 ---
 layout: post
-title:  "An Optimally Efficient Estimate of the Number of Matched Entities with Successes"
+title:  "An Optimally Efficient Online Estimate of the Number of Matched Entities with Successes"
 date:   2016-02-16 16:34:00
 categories: stats probability distribution scala
 ---
@@ -129,11 +129,12 @@ $$
 It may not be immediately obvious but this algorithm is $$ O(N) $$ where $$ N $$ is the number of matches.  Here's the
 algorithm
 
-### Algorithm
+### Algorithm 1
 
-1. Create a hash map with entity IDs for keys and a hash set of probabilities for each match involving the entity ID in the associated map key. 
-1. For each match: $$ \left(i, j, p_{ij} \right) $$, place $$ p_{ij} $$ in the set associated with key $$ i $$
-   (Optionally, place $$ p_{ij} $$ in the set associated with key $$ j $$, if the match is ascribed to both entities).
+1. Create a hash map with entity IDs for keys and a linked list of probabilities for each match involving the entity 
+   ID in the associated map key. 
+1. For each match: $$ \left(i, j, p_{ij} \right) $$, place $$ p_{ij} $$ in the list associated with key $$ i $$
+   (Optionally, place $$ p_{ij} $$ in the list associated with key $$ j $$, if the match is ascribed to both entities).
 1. For each *key-value* pair in the map, calculate the probability of at least one successful match using 
    **equation 1**. 
 1. Sum the resultant probabilities.
@@ -170,11 +171,124 @@ $$
 
 *These are the same as the expectations from the naive calculation.*
 
+### Algorithm 2
+
+One might notice that the lists in **Algorithm 1** are overkill and completely unnecessary.  Instead we can do the
+following: 
+
+1. Create a hash map, $$ M $$ with entity IDs in $$ \mathbb{N} $$ for keys and values in $$ \mathbb{R} $$.  The 
+   starting value, for each associated key, should be *1*.
+1. For each match: $$ \left(i, j, p_{ij} \right) $$
+1.   $$ \quad \left(i, v\right) \leftarrow \left(i, v \left(1 - p_{ij}\right) \right) $$ &nbsp;
+1.   $$ \quad \left(j, v\right) \leftarrow \left(j, v \left(1 - p_{ij}\right) \right) $$ (Optionally, if match is 
+     ascribed to both entities).
+1. Compute the sum of $$ 1 - v, \forall v \in M $$. 
+
+
+#### Algorithm 2 Code
+
+{% highlight scala linenos %}
+// Scala Code
+case class Match(i: Int, j: Int, prob: Double)
+
+def entitiesWithASuccessfulMatch(matches: TraversableOnce[Match], 
+                                 ascribeSuccessToBoth: Boolean): Double = {
+  matches.foldLeft(Map.empty[Int, Double]){(ps, m) => 
+    val si = ps.getOrElse(m.i, 1d) * (1 - m.prob)
+    if (ascribeSuccessToBoth) {
+      val sj = ps.getOrElse(m.j, 1d) * (1 - m.prob)
+      ps ++ List(m.i -> si, m.j -> sj)
+    }
+    else ps + (m.i -> si)
+  }.valuesIterator.foldLeft(0d)((s, x) => s + 1 - x)
+}
+
+{% endhighlight %}
+
+#### Algorithm 2 Remarks
+
+One very special property to note here is that the input to `entitiesWithASuccessfulMatch` is a `TraversableOnce`, 
+which as should be obvious by the name is that it can only be traversed once.  Since we don't copy `matches` to a 
+data structure that can be traversed multiple times, this algorithm is an 
+[online algorithm](https://en.wikipedia.org/wiki/Online_algorithm).  If we think of the matches as a 
+[graph](https://en.wikipedia.org/wiki/Graph_(discrete_mathematics)), then this algorithm takes $$ O(E) $$ time and 
+$$ O(V) $$ auxiliary space.
+
+What's even cooler is that with a very small amount of work, we can turn this algorithm into a 
+[monoid](https://en.wikipedia.org/wiki/Monoid).  This allows the algorithm to be trivially parallelized.
+
+#### Monoid Code
+
+{% highlight scala linenos %}
+// Scala Code
+case class Match(i: Int, j: Int, prob: Double)
+
+case class EntitiesWithASuccessfulMatch private(ps: Map[Int, Double]) {
+  /**
+   * @return expectation of the number of entities involved in a 
+   *         successful match.
+   */
+  def expectation = ps.valuesIterator.foldLeft(0d)((s, x) => s + 1 - x)
+  
+  /**
+   * Convenience plus method that delegates to the monoid.
+   * @param e2
+   */
+  def +(e2: EntitiesWithASuccessfulMatch) = 
+    EntitiesWithASuccessfulMatch.+(this, e2) 
+}
+
+object EntitiesWithASuccessfulMatch {
+  def apply(matches: TraversableOnce[Match], 
+            ascribeSuccessToBoth: Boolean): EntitiesWithASuccessfulMatch = {
+            
+    val pss = matches.foldLeft(Map.empty[Int, Double]){(ps, m) => 
+      val si = ps.getOrElse(m.i, 1d) * (1 - m.prob)
+      if (ascribeSuccessToBoth) {
+        val sj = ps.getOrElse(m.j, 1d) * (1 - m.prob)
+        ps ++ List(m.i -> si, m.j -> sj)
+      }
+      else ps + (m.i -> si)
+    }
+    
+    EntitiesWithASuccessfulMatch(pss)
+  }
+
+  /**
+   * Monoid plus operation
+   * @param e1
+   * @param e2
+   */
+  def +(e1: EntitiesWithASuccessfulMatch, 
+        e2: EntitiesWithASuccessfulMatch) = {
+    val (small, large) = if (e1.ps.size < e2.ps.size) 
+                           (e1.ps, e2.ps) 
+                         else (e2.ps, e1.ps)
+    val m = small.foldLeft(large){ case (l, (k, p)) => 
+      l + (k -> l.getOrElse(k, 1d) * p) 
+    }
+    EntitiesWithASuccessfulMatch(m)
+  }
+  
+  /**
+   * Monoid zero
+   */
+  def zero() = EntitiesWithASuccessfulMatch(Map.empty)
+}
+
+{% endhighlight %}
+
+
+
 ## Remarks
 
 There's something really satisfying about this algorithm, not only because of the linear rather than exponential 
 runtime, but also because it doesn't have to do keep track of what entities are connected to each other after grouping
 the matches by entity ID.  This not only makes the algorithm much faster, but it's much simpler conceptually. 
+
+We've shown that this algorithm is both an [online algorithm](https://en.wikipedia.org/wiki/Online_algorithm) meaning
+we can update the results as data becomes available, and that it has a [monoid](https://en.wikipedia.org/wiki/Monoid),
+so we can easily parallelize the algorithm.
 
 <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
 
