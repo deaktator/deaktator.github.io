@@ -112,7 +112,7 @@ in at least one successful match is one minus the probability of being involved 
 for an entity, $$ a $$, we aggregate the matches involving $$ a $$, we can write the probability of $$ a $$ being
 in at least one successful match as: 
 
-$$ 1 - \sum _{ i\in { M }_{ a } }{ \left( 1-{ p }_{ ai } \right) } \\quad (1) $$
+$$ 1 - \sum _{ i\in { M }_{ a } }{ \left( 1-{ p }_{ ai } \right) } \quad (1) $$
 
 where $$ M_{i} $$ is the set of matches involving $$ a $$.  Then if we want to calculate the distribution of the 
 number entities involved in at least one successful match, the appropriate distribution is the
