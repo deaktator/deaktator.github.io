@@ -12,7 +12,7 @@ $$
 $$
 
 one might want to estimate the number of elements in $$ A $$, $$ B $$, or $$ A \cup B $$ that are involved in a 
-successful match.  Done naively, this involves calculating an expectation that is as complex to calculate as 
+successful match.  Done naïvely, this involves calculating an expectation that is as complex to calculate as 
 calculating the [PMF](https://en.wikipedia.org/wiki/Probability_mass_function) of the 
 [Poisson binomial distribution]({% post_url 2015-08-09-poisson-binomial-distribution %}).  We can sum 
 $$ \text{ops}(n,k) $$, from the previous post [Poisson binomial distribution]({% post_url 2015-08-09-poisson-binomial-distribution %}), 
@@ -25,7 +25,7 @@ $$
 \end{aligned}
 $$
 
-Where we add in the multiplication operations necessary to calculate the expectation.  This shows that when calculated 
+where we add in the multiplication operations necessary to calculate the expectation.  This shows that when calculated 
 naïvely, it would take an exponential amount of operations to calculate the number of entities with a success.
 
 ## Example 1
@@ -42,7 +42,7 @@ Then we can determine the number of entities expected to see at least one succes
 $$
 \begin{aligned}
 0 \times \left( 1-{ p }_{ ac } \right) \left( 1-{ p }_{ bd } \right) + \\ 
-2 \times \left( 1-{ p }_{ ac } \right) { p }_{ bd }+2{ p }_{ ac }\left( 1-{ p }_{ bd } \right) + \\ 
+2 \times \left( 1-{ p }_{ ac } \right) { p }_{ bd }+2 \times { p }_{ ac }\left( 1-{ p }_{ bd } \right) + \\ 
 4 \times { p }_{ ac }{ p }_{ bd }
 \end{aligned}
 $$
@@ -52,8 +52,8 @@ The probabilities (on the right) should be familiar to those who've seen the
 $$ \left\{ 0, 2, 2, 4 \right\} $$ need some explaining.  In this example, we're ascribing the successful events, when 
 they occur, to both entities involved in the match.  The coefficient is the number of unique entities that appear in
 ***success*** probability subscripts of each term or [addend](https://en.wikipedia.org/wiki/Addend).  For instance, in 
-the first line, there are no success probabilities, only failure probabilities, so the coefficient is $$ 0 $$.  $$ b $$
-and $$ d $$ occur in the second term so the coefficient is 2; $$ a $$ and $$ c $$ occur in the third term so the 
+the first line, there are no success probabilities&mdash;only failure probabilities&mdash;so the coefficient is $$ 0 $$.  
+$$ b $$ and $$ d $$ occur in the second term so the coefficient is 2; $$ a $$ and $$ c $$ occur in the third term so the 
 coefficient is 2; $$ a $$, $$ d $$, $$ c $$ and $$ d $$ occur in the fourth term so the coefficient is 4.  The 
 expectation, once simplified is $$ 2 p_{ac} + 2 p_{bd} $$.
 
@@ -101,8 +101,8 @@ $$
   p_{ad} p_{bd} - p_{bc} p_{bd}
 $$
 
-This calculation, while accurate is requires exponential runtime and it requires an understanding of the topology of 
-graph as well to determine the coefficients.
+This calculation, while accurate requires exponential runtime and it also requires an understanding of the topology of 
+graph to determine the coefficients.
  
 ## A Better Way
 
@@ -114,20 +114,20 @@ in at least one successful match as:
 
 $$ 1 - \sum _{ i\in { M }_{ a } }{ \left( 1-{ p }_{ ai } \right) } \quad (1) $$
 
-where $$ M_{i} $$ is the set of matches involving $$ a $$.  Then if we want to calculate the distribution of the 
+where $$ M_{a} $$ is the set of matches involving $$ a $$.  Then if we want to calculate the distribution of the 
 number entities involved in at least one successful match, the appropriate distribution is the
-[Poisson binomial distribution]({% post_url 2015-08-09-poisson-binomial-distribution %}).  The expectation of the 
-Poisson binomial distribution is just the some of the success probabilities that parameterize the distribution.  See
-the [wikipedia page](https://en.wikipedia.org/wiki/Poisson_binomial_distribution) for details. So, if we want to 
-calculate the expectation, we take the some of the probabilities of the entity being in at least one successful match.  
-This is just
+[Poisson binomial distribution]({% post_url 2015-08-09-poisson-binomial-distribution %}).  The expectation of the
+Poisson binomial distribution is just the sum of the success probabilities that parameterize the distribution.  See
+the [wikipedia page](https://en.wikipedia.org/wiki/Poisson_binomial_distribution) for details. So, if we want to
+calculate the expectation, we take the sum of the probabilities of the entity being in at least one successful match.
+This is just:
 
 $$
 \sum _{ i=1 }^{ N }{ \left( 1-\sum _{ j\in { M }_{ i } }{ \left( 1-{ p }_{ ij } \right)  }  \right)  } 
 $$
 
 It may not be immediately obvious but this algorithm is $$ O(N) $$ where $$ N $$ is the number of matches.  Here's the
-algorithm
+algorithm:
 
 ### Algorithm 1
 
@@ -139,8 +139,8 @@ algorithm
    **equation 1**. 
 1. Sum the resultant probabilities.
 
-Since we only ever iterate over the match probabilities twice, and hash map and hash set insertion and iteration is
-$$ O(1) $$ per operation, the algorithm is $$ O(N) $$ 
+Since we only ever iterate over the match probabilities twice, and hash map and linked list insertion and iteration is
+$$ O(1) $$ per operation, the algorithm is $$ O(N) $$.
 
 ### Equivalence
 
@@ -169,12 +169,12 @@ $$
   p_{ad} p_{bd} - p_{bc} p_{bd}
 $$
 
-*These are the same as the expectations from the naive calculation.*
+*These are the same as the expectations from the naïve calculation.*
 
 ### Algorithm 2
 
-One might notice that the lists in **Algorithm 1** are overkill and completely unnecessary.  Instead we can do the
-following: 
+One might notice that the linked lists in **Algorithm 1** are overkill and completely unnecessary.  Instead we can do 
+the following: 
 
 1. Create a hash map, $$ M $$ with entity IDs in $$ \mathbb{N} $$ for keys and values in $$ \mathbb{R} $$.  The 
    starting value, for each associated key, should be *1*.
@@ -208,7 +208,7 @@ def entitiesWithASuccessfulMatch(matches: TraversableOnce[Match],
 #### Algorithm 2 Remarks
 
 One very special property to note here is that the input to `entitiesWithASuccessfulMatch` is a `TraversableOnce`, 
-which as should be obvious by the name is that it can only be traversed once.  Since we don't copy `matches` to a 
+which, as should be obvious by the name, can only be traversed once.  Since we don't copy `matches` to a 
 data structure that can be traversed multiple times, this algorithm is an 
 [online algorithm](https://en.wikipedia.org/wiki/Online_algorithm).  If we think of the matches as a 
 [graph](https://en.wikipedia.org/wiki/Graph_(discrete_mathematics)), then this algorithm takes $$ O(E) $$ time and 
@@ -221,9 +221,14 @@ What's even cooler is that with a very small amount of work, we can turn this al
 
 {% highlight scala linenos %}
 // Scala Code
+trait Monoid[A] {
+  def append(a: A, b: A): A
+  def zero: A
+}
+
 case class Match(i: Int, j: Int, prob: Double)
 
-case class EntitiesWithASuccessfulMatch private(ps: Map[Int, Double]) {
+case class SuccessCounter private(ps: Map[Int, Double]) {
   /**
    * @return expectation of the number of entities involved in a 
    *         successful match.
@@ -234,13 +239,12 @@ case class EntitiesWithASuccessfulMatch private(ps: Map[Int, Double]) {
    * Convenience plus method that delegates to the monoid.
    * @param e2
    */
-  def +(e2: EntitiesWithASuccessfulMatch) = 
-    EntitiesWithASuccessfulMatch.+(this, e2) 
+  def +(e2: SuccessCounter) = SuccessCounter.monoid.append(this, e2) 
 }
 
-object EntitiesWithASuccessfulMatch {
+object SuccessCounter {
   def apply(matches: TraversableOnce[Match], 
-            ascribeSuccessToBoth: Boolean): EntitiesWithASuccessfulMatch = {
+            ascribeSuccessToBoth: Boolean): SuccessCounter = {
             
     val pss = matches.foldLeft(Map.empty[Int, Double]){(ps, m) => 
       val si = ps.getOrElse(m.i, 1d) * (1 - m.prob)
@@ -251,43 +255,54 @@ object EntitiesWithASuccessfulMatch {
       else ps + (m.i -> si)
     }
     
-    EntitiesWithASuccessfulMatch(pss)
+    SuccessCounter(pss)
   }
 
-  /**
-   * Monoid plus operation
-   * @param e1
-   * @param e2
-   */
-  def +(e1: EntitiesWithASuccessfulMatch, 
-        e2: EntitiesWithASuccessfulMatch) = {
-    val (small, large) = if (e1.ps.size < e2.ps.size) 
-                           (e1.ps, e2.ps) 
-                         else (e2.ps, e1.ps)
-    val m = small.foldLeft(large){ case (l, (k, p)) => 
-      l + (k -> l.getOrElse(k, 1d) * p) 
+  implicit object monoid extends Monoid[SuccessCounter] {
+    def append(e1: SuccessCounter, 
+               e2: SuccessCounter) = {
+      val (small, large) = if (e1.ps.size < e2.ps.size) 
+                             (e1.ps, e2.ps) 
+                           else (e2.ps, e1.ps)
+      val m = small.foldLeft(large){ case (lrg, (k, p)) => 
+        lrg + (k -> lrg.getOrElse(k, 1d) * p) 
+      }
+      SuccessCounter(m)
     }
-    EntitiesWithASuccessfulMatch(m)
-  }
   
-  /**
-   * Monoid zero
-   */
-  def zero() = EntitiesWithASuccessfulMatch(Map.empty)
+    def zero() = SuccessCounter(Map.empty)  
+  }
 }
 
 {% endhighlight %}
 
+#### Monoid Calling Code Example
+
+{% highlight scala linenos %}
+val e1 = SuccessCounter(Seq(Match(1, 3, 1d/2), Match(1, 4, 1d/3)), true)
+val e2 = SuccessCounter(Seq(Match(2, 3, 1d/5), Match(2, 4, 1d/7)), true)
+val e3 = e1 + e2
+
+// 2.009523809523809 = 211/105
+e3.expectation
+
+val e4 = SuccessCounter(Seq(Match(1, 3, 1d/2), Match(1, 4, 1d/3),
+                            Match(2, 3, 1d/5), Match(2, 4, 1d/7)), true)
+
+// 2.009523809523809 = 211/105
+e4.expectation
+
+{% endhighlight %}
 
 
 ## Remarks
 
 There's something really satisfying about this algorithm, not only because of the linear rather than exponential 
-runtime, but also because it doesn't have to do keep track of what entities are connected to each other after grouping
-the matches by entity ID.  This not only makes the algorithm much faster, but it's much simpler conceptually. 
+runtime, but also because it doesn't keep track of the graph topology.  This not only makes the algorithm much faster, 
+but it's much simpler conceptually. 
 
 We've shown that this algorithm is both an [online algorithm](https://en.wikipedia.org/wiki/Online_algorithm) meaning
-we can update the results as data becomes available, and that it has a [monoid](https://en.wikipedia.org/wiki/Monoid),
+we can update the results as data becomes available, and a [monoid](https://en.wikipedia.org/wiki/Monoid),
 so we can easily parallelize the algorithm.
 
 <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
