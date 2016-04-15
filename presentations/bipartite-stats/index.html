@@ -541,20 +541,136 @@ v  s(0,2)  s(0,3)  s(0,7)  s(0,11)  s(0,17)  s(0,29)  s(0,43)  s(0,59)
 							Therefore steps **(1)** and **(3)** are optional.
 						</script>
 					</section>
-					
+				</section>
+
 <!-- Product monoids --> 
 <!-- A product of functions with same domain can be made into a function from the domain to a product. -->
 
-				</section>
-
-				
 				<section data-markdown>
 					<script type="text/template">
-						## Aggregates
+						## Combining Aggregates
+					</script>
+				</section>
+
+				<section>
+					<section data-markdown>
+						<script type="text/template">
+							## Combining Aggregates
+							
+							We can combine Aggregates to a single *combined* Aggregate by noting:
+							
+							1. A [product](https://en.wikipedia.org/wiki/Product_type) of 
+							   functions with a common 
+							   [domain](https://en.wikipedia.org/wiki/Domain_of_a_function) 
+							   **is transformable** to a function from that common
+							   [domain](https://en.wikipedia.org/wiki/Domain_of_a_function) to 
+							   the [product](https://en.wikipedia.org/wiki/Product_type) of 
+							   [codomains](https://en.wikipedia.org/wiki/Codomain).
+							1. A [product](https://en.wikipedia.org/wiki/Product_type) of
+							  [commutative monoids](https://en.wikipedia.org/wiki/Monoid#Commutative_monoid)
+							  **is transformable** to a 
+							  [commutative monoid](https://en.wikipedia.org/wiki/Monoid#Commutative_monoid)
+							  of a [product](https://en.wikipedia.org/wiki/Product_type).
+						</script>
+					</section>
+					
+					<section data-markdown>
+						<script type="text/template">
+							## Combining Aggregates
+
+							*Generically convert a product of functions to a function with
+							 a codomain as a product of the original codomains.*
+
+							```scala
+							def p2Fn[A, B, C](p: (A => B, A => C)): A => (B, C) = 
+							  (a: A) => (p._1(a), p._2(a))
+							```
+
+							*Calling code*
+							
+							```scala
+							  
+							// f: Int => (Double, Long)  First arg is halved, second is doubled.
+							val f = p2Fn(((i: Int) => i / 2d,
+							              (i: Int) => 2L * i
+							            ))
+
+							assert( (2d, 8L) == f(4) )
+							```
+
+						</script>
+					</section>
+					
+					<section data-markdown>
+						<script type="text/template">
+							## Combining Aggregates
+
+							*Generically convert a product of commutative monoids to a 
+							 commutative monoid of products.*
+
+							```scala
+							def p2CommMon[A, B](p: (CommutativeMonoid[A], CommutativeMonoid[B])) =
+							  new CommutativeMonoid[(A, B)] {
+							    def id = (p._1.id, p._2.id)
+							    def op(a: (A, B), b: (A, B)): (A, B) =
+							      (p._1.op(a._1, b._1), p._2.op(a._2, b._2))
+							  }
+							```
+						</script>
+					</section>
+					
+					<section data-markdown>
+						<script type="text/template">
+							## Combining Aggregates
+
+							*Generically convert a product of commutative monoids to a 
+							 commutative monoid of products.*
+
+							```scala
+							def pAgg[A, B, C, D, E](p: (Aggregate[A, B, C],
+							                            Aggregate[A, D, E])
+							                       ): Aggregate[A, (B, D), (C, E)] = {
+							  val (x, y) = p
+							  
+							  new Aggregate[A, (B, D), (C, E)] {
+							    val f = p2Fn((x.f, y.f))
+							    val m = p2CommMon((x.m, y.m))
+							    val g = p2Fn((x.g, y.g))
+							  }
+							}
+							```
+							
+							*This same process works for higher arity products.*
+						</script>
+					</section>
+				</section>
+
+				<section>
+					<section data-markdown>
+						<script type="text/template">
+							## Aggregate Examples
+						</script>
+					</section>
+
+					<section data-markdown>
+						<script type="text/template">
+							## Aggregate Examples
+							
+							
+						</script>
+					</section>
+				</section>
+
+				<section data-markdown>
+					<script type="text/template">
+						## Place Holder Slide
+						
+						Some Text
 
 						```scala
-						// Reduce with a monoid.
-						def reduce[A](xs: TraversableOnce[A])(implicit m: Monoid[A]): A = 
+						// Random scala code
+						def reduce[A](xs: TraversableOnce[A])(implicit 
+						              m: CommutativeMonoid[A]): A = 
 						  xs.foldLeft(m.id)(m.op)
 						```
 					</script>
