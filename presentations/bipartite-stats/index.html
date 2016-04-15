@@ -1,0 +1,602 @@
+<!doctype html>
+<html lang="en">
+
+	<head>
+		<meta charset="utf-8">
+
+		<title>Statistics on Bipartite Graphs</title>
+
+		<meta name="description" content="Statistics on Bipartite Graphs">
+		<meta name="author" content="Ryan Deak">
+
+		<meta name="apple-mobile-web-app-capable" content="yes">
+		<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, minimal-ui">
+
+		<link rel="stylesheet" href="../revealjs/css/reveal.css">
+		<link rel="stylesheet" href="../revealjs/css/theme/sky.css" id="theme">
+
+		<!-- Code syntax highlighting -->
+		<link rel="stylesheet" href="../highlightjs/css/github-gist.css">
+
+
+		<!-- Printing and PDF exports -->
+		<script>
+			var link = document.createElement( 'link' );
+			link.rel = 'stylesheet';
+			link.type = 'text/css';
+			link.href = window.location.search.match( /print-pdf/gi ) ? '../revealjs/css/print/pdf.css' : '../revealjs/css/print/paper.css';
+			document.getElementsByTagName( 'head' )[0].appendChild( link );
+		</script>
+
+		<!--[if lt IE 9]>
+		<script src="../revealjs/lib/js/html5shiv.js"></script>
+		<![endif]-->
+	</head>
+
+	<body>
+
+		<div class="reveal">
+
+			<!-- Any section element inside of this container is displayed as a slide -->
+			<div class="slides">
+				<section>
+					<h1>Statistics on <br />Bipartite Graphs</h1>
+					<p>
+						<small>
+							Ryan Deak 
+							&middot; <a href="https://deaktator.github.io">deaktator.github.io</a> 
+							&middot; <a href="https://twitter.com/deaktator">@deaktator</a>
+						</small>
+					</p>
+				</section>
+
+				<section data-markdown>
+					<script type="text/template">
+						## Outline
+						- [Motivation](#/2)
+						- [Platform Architecture](#/3)
+						- [Aggregates](#/4)
+						  - Derivation
+						  - Combining
+						  - Examples
+					</script>
+				</section>
+				
+				<section data-markdown>
+					<script type="text/template">
+						## Motivation
+					
+						We:
+					
+						- have probabilistic models operating on dyadic<small><sup>*1*</sup></small> data.
+						- optimize global behaviors for dyads.
+						- test efficacy of models (*assuming IID<small><sup>2</sup></small>*).
+						- ***want to summarize expected global behaviors!***
+
+						<small>
+						<ol>
+						<li>**[dyadic](https://en.wikipedia.org/wiki/Arity)**: *consisting of two elements or parts*</li>
+						<li>**[IID](https://en.wikipedia.org/wiki/Independent_and_identically_distributed_random_variables)**: *independent and identically distributed*</li>
+						</ol>
+						</small>
+					
+						Note: 
+						
+						E.g. maximize # of positive events.
+
+						The ability to summarize exp behaviors gives us a test bed for
+						assessing the effects of manipulating model scores.
+					</script>
+				</section>
+				
+				<section data-markdown>
+					<script type="text/template">
+						## Platform Architecture
+
+						- Command Line Interface (*CLI*)
+						- [CSV](https://en.wikipedia.org/wiki/Comma-separated_values), 
+						  [JSON](http://json.org), 
+						  [Graphite](https://github.com/graphite-project) output
+						- *post-hoc* analysis by reading log files
+						- *a priori* analysis by:
+						  1. Reading input data
+						  1. Transforming model scores
+						  1. Performing [graph](https://en.wikipedia.org/wiki/Graph_%28discrete_mathematics%29) optimization
+						  1. **Associating original scores to outcomes**
+
+						Note: 
+						
+						This last step is important when the model scores represent
+						probs b/c we want to calculate statistics on those probs.
+					</script>
+				</section>
+
+				<section data-markdown>
+					<script type="text/template">
+						## Aggregates
+					</script>
+				</section>
+
+<!--
+motivation
+
+trait Semigroup[A] {
+  def op(a: A, b: A): A
+}
+
+trait Monoid[A] extends Semigroup[A] {
+  def id: A
+}
+
+implicit val additiveLongMonoid: Monoid[Long] = new Monoid[Long] {
+  def id = 0L
+  def op(a: Long, b: Long) = a + b
+}
+
+implicit val stringAppendMonoid: Monoid[String] = new Monoid[String] {
+  def id = ""
+  def op(a: String, b: String) = if ("" == a) b else s"$a, $b"
+}
+
+
+implicit def setMonoid[A]: Monoid[Set[A]] = new Monoid[Set[A]] {
+  def id = Set.empty[A]
+  def op(a: Set[A], b: Set[A]): Set[A] = a ++ b
+}
+
+import scala.collection.{GenTraversable, GenTraversableOnce}
+
+def sum[A](xs: GenTraversableOnce[A])(implicit m: Monoid[A]): A = 
+  xs.aggregate(m.id)(m.op, m.op)
+
+def sum2Fold[A, B](xs: GenTraversableOnce[A])(f: A => B)(implicit m: Monoid[B]): B = 
+  xs.foldLeft(m.id)((s, x) => m.op(s, f(x)))
+
+def sum2Agg[A, B](xs: GenTraversableOnce[A])(f: A => B)(implicit m: Monoid[B]): B = 
+  xs.aggregate(m.id)((s, x) => m.op(s, f(x)), m.op)
+
+def sum3[A, B, C](xs: GenTraversableOnce[A])(f: A => B)(g: B => C)(implicit m: Monoid[B]): C = 
+  g(xs.aggregate(m.id)((s, x) => m.op(s, f(x)), m.op))
+
+val xs = Vector[Long](1, 2, 3, 2)
+assert( 8 == sum(xs) )
+assert( Set(1, 2, 3) == sum2Fold(xs)(x => Set(x)) )
+assert( Set(1, 2, 3) == sum2Agg(xs)(x => Set(x)) )
+assert( 3 == sum3(xs)(x => Set(x))(s => s.size) )
+
+def time[A](a: => A) = {
+  val t1 = System.nanoTime
+  val r = a
+  val t2 = System.nanoTime
+  (r, (1.0e-9*(t2 - t1)).toFloat)
+}
+
+val (sF, tF) = time(sum2Fold((1 to 1000000000).par)(_.toLong))
+val (sA, tA) = time(sum2Agg((1 to 1000000000).par)(_.toLong))
+
+scala> val (sF, tF) = time(sum2Fold((1 to 1000000000).par)(_.toLong))
+sF: Long = 500000000500000000
+tF: Float = 20.147625
+
+scala> val (sA, tA) = time(sum2Agg((1 to 1000000000).par)(_.toLong))
+sA: Long = 500000000500000000
+tA: Float = 8.353258
+
+def hashPartitionParallelize[A](xs: Seq[A])(seed) = 
+  xs.sortWith(_.## < _.##).par
+
+sum2Agg(hashPartitionParallelize(Seq("10", "2"))(_.toString)
+
+
+trait Aggregator[-A, +B] extends (RDD[A] => B)
+
+trait Functor[F[_]] {
+  def map[A, B](xs: F[A])(f: A => B): F[B]
+}
+
+implicit object ListFunctor extends Functor[List] {
+  def map[A, B](xs: List[A])(f: A => B) = xs.map(f)
+}
+
+implicit object VectorFunctor extends Functor[Vector] {
+  def map[A, B](xs: Vector[A])(f: A => B) = xs.map(f)
+}
+
+def combine[F[_], A, B](fs: F[A => B])(implicit f: Functor[F]): A => F[B] = 
+  (a: A) => f.map(fs)(g => g(a))
+
+val multByTwo = (i: Int) => 2 * i
+val sgn = (i: Int) => math.signum(i)
+val sgnDouble = sgn.andThen(x => x.toDouble)
+
+Seq(5, 11, 13, 17).aggregate(0)((a, b) => { val r = a + b; println(s"seqop:  $a + $b = $r"); r },
+                                (a, b) => { val r = a + b; println(s"combop: $a + $b = $r"); r })
+
+
+Seq(2, 3, 7, 11, 17, 29, 43, 59).par.
+  aggregate(0)(
+    (a, b) => { val r = a + b; println(s"seqop:  $a + $b = $r"); r },
+    (a, b) => { val r = a + b; println(s"combop: $a + $b = $r"); r })
+
+  ^                              171 = c(23, 148)
+  |                          /                       \
+  |              23 = c(5, 18)                        148 = c(46, 102)
+4 |            /              \                      /                \
+  |      5 = c(2, 3)      18 = c(7, 11)      46 = c(17, 29)     102 = c(43, 59)
+  |     /          \      /           \      /            \     /             \
+  v   s(0, 2)  s(0, 3)  s(0, 7)  s(0, 11)  s(0, 17)  s(0, 29)  s(0, 43)  s(0, 59)
+
+
+combop: 2 + 3 = 5
+combop: 43 + 59 = 102
+combop: 7 + 11 = 18
+combop: 17 + 29 = 46
+combop: 5 + 18 = 23
+combop: 46 + 102 = 148
+combop: 23 + 148 = 171
+
+0 + 5.toInt = 5
+0 + 11 = 11
+seqop:  0 + 17 = 17
+seqop:  0 + 13 = 13
+
+combop: 13 + 17 = 30
+combop: 5 + 11 = 16
+combop: 16 + 30 = 46
+
+
+val vecComb = combine(Vector(multByTwo, sgn))     // Int => Vector[Int] 
+val lstComb = combine(List(multByTwo, sgnDouble)) // Int => List[AnyVal]
+
+scala.collection.GenTraversableOnce[+A] {
+  def aggregate[B](z: => B)(seqop: (B, A) => B, combop: (B, B) => B): B
+}
+
+class org.apache.spark.rdd.RDD[A] {
+  def aggregate[B](z:    B)(seqop: (B, A) => B, combop: (B, B) => B)
+                  (implicit ct: ClassTag[B]): B
+}
+
+
+key insights
+	one pass statistics:
+		Aggregate
+			functor, monad, monoid
+			monoid
+			commutative monoid
+			product monoid
+			same return type
+			Abstract Type Member
+		
+
+	model events as independent:
+		binomial poisson distribution
+			Central Limit Theorem -> normal approximation
+	
+-->
+				
+				<section data-markdown>
+					<script type="text/template">
+						## Aggregates
+						
+						- An aggregated summary statistic
+						- [One pass algorithm](https://en.wikipedia.org/wiki/One-pass_algorithm) (over graph nodes) 
+						- Perform [map / reduce](https://en.wikipedia.org/wiki/MapReduce)
+						- Independently defined, easily combined
+					</script>
+				</section>
+
+				<section>
+					<section data-markdown>
+						<script type="text/template">
+							## Deriving Aggregates
+							
+							Aggregates perform aggregation using [map / reduce](https://en.wikipedia.org/wiki/MapReduce) 
+							*via* the `aggregate` [higher-order function](https://en.wikipedia.org/wiki/Higher-order_function) 
+							available in the [Scala](http://www.scala-lang.org) standard 
+							library [API](http://www.scala-lang.org/api/current/index.html#scala.collection.GenTraversableOnce) 
+							and the [Spark](http://spark.apache.org) library 
+							[API](http://spark.apache.org/docs/1.5.1/api/scala/index.html#org.apache.spark.rdd.RDD).
+							
+						</script>
+					</section>
+
+					<section data-markdown>
+						<script type="text/template">
+							## Deriving Aggregates
+							
+							- An [Aggregate](#) is a function $h: A \rightarrow C$.
+							- Each [Aggregate](#) consists of 3 components:
+							  1. A function $ f : A \rightarrow B $
+							  1. A [commutative monoid](https://en.wikipedia.org/wiki/Monoid#Commutative_monoid) 
+							     instance for type $B$.
+							  1. A function $ g : B \rightarrow C $
+							
+							Note: 
+							
+							We'll see in a second how these three components are used,
+							but first, let's take a look at the Scala and Spark APIs.
+						</script>
+					</section>
+
+					<section data-markdown>
+						<script type="text/template">
+							## Deriving Aggregates
+							
+							```scala
+							// Scala's standard library
+							trait scala.collection.GenTraversableOnce[+A] {
+							  def aggregate[B](z: => B)(
+							                   seqop:  (B, A) => B, 
+							                   combop: (B, B) => B): B
+							}
+
+						
+							// Spark API
+							abstract class org.apache.spark.rdd.RDD[T] {
+							  def aggregate[U](zeroValue: U)(
+							                   seqOp:  (U, T) => U, 
+							                   combOp: (U, U) => U)(implicit 
+							                   arg0: ClassTag[U]): U
+							}
+							```
+						</script>
+					</section>
+					
+					<section data-markdown>
+						<script type="text/template">
+							## Deriving Aggregates
+						
+							```scala
+							// Scala's standard library
+							trait scala.collection.GenTraversableOnce[+A] {
+							  def aggregate[B](z: => B)(
+							                   seqop:  (B, A) => B, 
+							                   combop: (B, B) => B): B
+							}
+
+						
+							// Spark API: Changing type param names, dropping implicit.
+							abstract class org.apache.spark.rdd.RDD[A] {
+							  def aggregate[B](z: B)(
+							                   seqOp:  (B, A) => B, 
+							                   combOp: (B, B) => B): B
+
+							}
+							```
+						</script>
+					</section>
+					<section data-markdown>
+						<script type="text/template">
+							## Quick Aside: Comm.&nbsp;Monoids
+							
+							A [commutative monoid](https://en.wikipedia.org/wiki/Monoid#Commutative_monoid)
+							on type $A$:
+							
+							- A commutative, associative binary operation $\times:(A, A) \rightarrow A$
+							- An identity $e$ in $A$ *s.t.* $\forall a \in A$, $a = e \times a = a \times e$ 
+
+							We can define a [Scala](http://www.scala-lang.org) `trait`:
+
+							```scala
+							trait CommutativeMonoid[A] {
+							  def id: A
+							  def op(a: A, b: A): A
+							}
+							```
+						</script>
+					</section>
+					
+					<section data-markdown>
+						<script type="text/template">
+							## Deriving Aggregates
+							
+							```scala
+							// Simplified version of actual code
+							trait Aggregate[A, B, C] {
+							  val f: A => B
+							  val m: CommutativeMonoid[B]
+							  val g: B => C
+
+
+
+							  // Scala standard lib
+							  def aggregate(xs: scala.collection.GenTraversableOnce[A]): C = 
+							    g(xs.aggregate(m.id)((x, y) => m.op(x, f(y)), m.op))
+
+
+
+
+							}
+							```
+						</script>
+					</section>
+					
+					<section data-markdown>
+						<script type="text/template">
+							## Deriving Aggregates
+							
+							```scala
+							// Simplified version of actual code
+							trait Aggregate[A, B, C] {
+							  val f: A => B
+							  val m: CommutativeMonoid[B]
+							  val g: B => C
+
+							  // vvvvv   SAME IMPLEMENTATION!   vvvvv
+
+							  // Scala standard lib
+							  def aggregate(xs: scala.collection.GenTraversableOnce[A]): C = 
+							    g(xs.aggregate(m.id)((x, y) => m.op(x, f(y)), m.op))
+
+							  // Spark
+							  def aggregate(xs: org.apache.spark.rdd.RDD[A]): C =
+							    g(xs.aggregate(m.id)((x, y) => m.op(x, f(y)), m.op))
+							}
+							```
+						</script>
+					</section>
+
+					<section data-markdown>
+						<script type="text/template">
+							## Deriving Aggregates: Example Application
+							
+							```scala
+							object AdditiveDoubleMonoid extends CommutativeMonoid[Double] {
+							  def id = 0d
+							  def op(a: Double, b: Double) = a + b
+							}
+							
+							case class BasicAgg[A, B, C](f: A => B,
+							                             m: CommutativeMonoid[B],
+							                             g: B => C) extends Aggregate[A, B, C]
+							```
+
+							And calling code ...
+							
+							```scala
+							     
+							// Euclidean norm is an Aggregate[Int, Double, Float]    
+							val eucNorm = BasicAgg((x: Int) => math.pow(x, 2), 
+							                       AdditiveDoubleMonoid, 
+							                       (x: Double) => math.sqrt(x).toFloat)
+
+							// 5, 12, 13 triangle.  Notice we use an Iterator.
+							assert(13f == eucNorm.aggregate(Iterator(5, 12)))
+							```
+						</script>
+					</section>
+					
+					<section data-markdown>
+						<script type="text/template">
+							## What does `aggregate` do?
+							
+							```scala
+							Seq(2, 3, 7, 11, 17, 29, 43, 59).par.
+							  aggregate(0)(
+							    (a, b) => { val r = a + b; println(s"s: $a + $b = $r"); r },
+							    (a, b) => { val r = a + b; println(s" c:  $a + $b = $r"); r })
+							```
+							
+							Returns `171` and prints:
+							<pre>
+s: 0 + 2 = 2
+s: 0 + 3 = 3
+s: 0 + 17 = 17
+s: 0 + 29 = 29
+s: 0 + 7 = 7
+c:  17 + 29 = 46
+s: 0 + 59 = 59
+c:  2 + 3 = 5
+s: 0 + 11 = 11
+s: 0 + 43 = 43
+c:  7 + 11 = 18
+c:  43 + 59 = 102
+c:  5 + 18 = 23
+c:  46 + 102 = 148
+c:  23 + 148 = 171
+							</pre>
+						</script>
+					</section>
+					
+					<section data-markdown>
+						<script type="text/template">
+							## What does `aggregate` do? 
+							<pre>
+^                            171 = c(23,148)
+|                         /                  \
+|             23 = c(5,18)                   148 = c(46,102)
+4           /              \               /                \
+|    5 = c(2,3)      18 = c(7,11)    46 = c(17,29)     102 = c(43,59)
+|   /          \    /           \    /            \    /            \
+v  s(0,2)  s(0,3)  s(0,7)  s(0,11)  s(0,17)  s(0,29)  s(0,43)  s(0,59)
+
+   <------------------------------ 8 -------------------------------->
+							</pre>
+							
+														
+							Visualizing the results.  Notice:
+							
+							- *tree height* is logarithm in input size
+							  - ($4 = 1+\log _{ 2 }{ 8 } $).
+							- *tree height* is related to runtime 
+							  - (*b/c we can parallelize "subtasks"*)
+							- *s* is `seqOp` and *c* is `combOp` in `aggregate`
+						</script>
+					</section>
+					
+					<section data-markdown>
+						<script type="text/template">
+							## What does `aggregate` do? 
+							
+							So `aggregate` *can*:
+							
+							1. [partition](https://en.wikipedia.org/wiki/Partition_of_a_set) data
+							1. [map / reduce](https://en.wikipedia.org/wiki/MapReduce) within partitions
+							1. [reduce](https://en.wikipedia.org/wiki/Fold_%28higher-order_function%29) across partitions
+							
+							*Note that the partition may be a set containing only one set.*
+							Therefore steps **(1)** and **(3)** are optional.
+						</script>
+					</section>
+					
+<!-- Product monoids --> 
+<!-- A product of functions with same domain can be made into a function from the domain to a product. -->
+
+				</section>
+
+				
+				<section data-markdown>
+					<script type="text/template">
+						## Aggregates
+
+						```scala
+						// Reduce with a monoid.
+						def reduce[A](xs: TraversableOnce[A])(implicit m: Monoid[A]): A = 
+						  xs.foldLeft(m.id)(m.op)
+						```
+					</script>
+				</section>
+
+
+			</div> <!-- slides -->
+		</div>
+
+		<script src="../revealjs/lib/js/head.min.js"></script>
+		<script src="../revealjs/js/reveal.js"></script>
+
+		<script>
+
+			// Full list of configuration options available at:
+			// https://github.com/hakimel/reveal.js#configuration
+			Reveal.initialize({
+				controls: true,
+				progress: true,
+				history: true,
+				center: true,
+				slideNumber: true,
+
+				transition: 'fade', // none/fade/slide/convex/concave/zoom
+
+				math: {
+					mathjax: 'https://cdn.mathjax.org/mathjax/latest/MathJax.js',
+					config: 'TeX-AMS_HTML-full'
+				},
+
+				// Optional reveal.js plugins
+				dependencies: [
+					{ src: '../revealjs/lib/js/classList.js', condition: function() { return !document.body.classList; } },
+					{ src: '../revealjs/plugin/markdown/marked.js', condition: function() { return !!document.querySelector( '[data-markdown]' ); } },
+					{ src: '../revealjs/plugin/markdown/markdown.js', condition: function() { return !!document.querySelector( '[data-markdown]' ); } },
+					{ src: '../revealjs/plugin/highlight/highlight.js', async: true, callback: function() { hljs.initHighlightingOnLoad(); } },
+// 					{ src: '../revealjs/plugin/zoom-js/zoom.js', async: true },
+					{ src: '../revealjs/plugin/notes/notes.js', async: true },
+					{ src: '../revealjs/plugin/math/math.js', async: true }
+				]
+			});
+
+		</script>
+	</body>
+</html>
