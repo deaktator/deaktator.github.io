@@ -736,6 +736,11 @@ c:  23 + 148 = 171
 					<section data-markdown>
 						<script type="text/template">
 							## What does `aggregate` do? 
+
+							```scala
+							sum(Seq(2, 3, 7, 11, 17, 29, 43, 59).par) // .par parallelizes
+							```
+
 							<pre>
 ^                            171 = c(23,148)
 |                         /                  \
@@ -747,9 +752,6 @@ v  s(0,2)  s(0,3)  s(0,7)  s(0,11) | s(0,17)  s(0,29)  s(0,43)  s(0,59)
                                     
    <------------------------------ 8 -------------------------------->
 							</pre>
-							
-														
-							Visualizing the results.  Notice:
 							
 							- *tree height* is logarithmic in input size
 							  - ($4 = 1+\log _{ 2 }{ 8 } $).
@@ -777,10 +779,9 @@ v  s(0,2)  s(0,3)  s(0,7)  s(0,11) | s(0,17)  s(0,29)  s(0,43)  s(0,59)
 							val reduceAcross: Seq[Int] => Int = 
 							  (d: Seq[Int]) => d.foldLeft(0)(add("a: "))
 
-							val aggregate = 
-							  partition andThen mapReduceWithin andThen reduceAcross
+							val agg = partition andThen mapReduceWithin andThen reduceAcross
 
-							assert( 171 == aggregate( Seq(2, 3, 7, 11, 17, 29, 43, 59) ) )
+							assert( 171 == agg( Seq(2, 3, 7, 11, 17, 29, 43, 59) ) )
 							```
 						</script>
 					</section>
@@ -811,6 +812,11 @@ a: 23 + 148 = 171
 					<section data-markdown>
 						<script type="text/template">
 							## What does `aggregate` do? 
+
+							```scala
+							agg(Seq(2, 3, 7, 11, 17, 29, 43, 59))
+							```
+							
 							<pre>
                        171 = a(0, a(23, 148))
                                 / \
@@ -820,12 +826,9 @@ s(s(s(s(0, 2), 3), 7), 11) = 23  |  148 = s(s(s(s(0,17),29),43),59)
 <-------  partition 1  ------->  |  <-------  partition 2  -------->
 							</pre>
 							
-														
-							Visualizing the results.  Notice:
-							
-							- partitions operate in linear time: $O(N/P)$
-							- combining partitions operates in linear time: $O(P)$
-							- parallel algorithm runtime: $O(N/P)$ when $ \frac{ N }{ P } \gg P$
+							- Partitions operate in linear time: $O(N/P)$
+							- Combining partitions operates in linear time: $O(P)$
+							- Parallel algorithm runtime: $O(N/P)$ when $ \frac{ N }{ P } \gg P$
 							
 							This is a more *realistic* version of how aggregate scales.
 						</script>
