@@ -881,6 +881,8 @@ s(s(s(s(0, 2), 3), 7), 11) = 23  |  148 = s(s(s(s(0,17),29),43),59)
 							  **is transformable** to a 
 							  [commutative monoid](https://en.wikipedia.org/wiki/Monoid#Commutative_monoid)
 							  of a [product](https://en.wikipedia.org/wiki/Product_type).
+							1. Aggregators operating on the same data have the same domain
+							   (*up to [contravariance](https://en.wikipedia.org/wiki/Covariance_and_contravariance_%28computer_science%29)*).
 						</script>
 					</section>
 					
@@ -919,8 +921,8 @@ s(s(s(s(0, 2), 3), 7), 11) = 23  |  148 = s(s(s(s(0,17),29),43),59)
 							 commutative monoid of products.*
 
 							```scala
-							def p2CommMon[A, B](p: (CommutativeMonoid[A], CommutativeMonoid[B])) =
-							  new CommutativeMonoid[(A, B)] {
+							def p2CommMon[A, B](p: (CommMonoid[A], CommMonoid[B])) =
+							  new CommMonoid[(A, B)] {
 							    def id = (p._1.id, p._2.id)
 							    def op(a: (A, B), b: (A, B)): (A, B) =
 							      (p._1.op(a._1, b._1), p._2.op(a._2, b._2))
