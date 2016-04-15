@@ -57,7 +57,7 @@
 						## Outline
 						- [Motivation](#/2)
 						- [Platform Architecture](#/3)
-						- [Aggregates](#/4)
+						- [Aggregators](#/4)
 						  - Derivation
 						  - Combining
 						  - Examples
@@ -115,7 +115,7 @@
 
 				<section data-markdown>
 					<script type="text/template">
-						## Aggregates
+						## Aggregators
 					</script>
 				</section>
 
@@ -279,10 +279,10 @@ key insights
 				
 				<section data-markdown>
 					<script type="text/template">
-						## Aggregates
+						## Aggregators
 						
-						- An aggregated summary statistic
-						- [One pass algorithm](https://en.wikipedia.org/wiki/One-pass_algorithm) (over graph nodes) 
+						- Compute an aggregated summary statistic
+						- [Online algorithm](https://en.wikipedia.org/wiki/Online_algorithm) (*one adj. list at a time*) 
 						- Perform [map / reduce](https://en.wikipedia.org/wiki/MapReduce)
 						- Independently defined, easily combined
 					</script>
@@ -291,9 +291,9 @@ key insights
 				<section>
 					<section data-markdown>
 						<script type="text/template">
-							## Deriving Aggregates
+							## Deriving Aggregators
 							
-							Aggregates perform aggregation using [map / reduce](https://en.wikipedia.org/wiki/MapReduce) 
+							Aggregators perform aggregation using [map / reduce](https://en.wikipedia.org/wiki/MapReduce) 
 							*via* the `aggregate` [higher-order function](https://en.wikipedia.org/wiki/Higher-order_function) 
 							available in the [Scala](http://www.scala-lang.org) standard 
 							library [API](http://www.scala-lang.org/api/current/index.html#scala.collection.GenTraversableOnce) 
@@ -305,10 +305,10 @@ key insights
 
 					<section data-markdown>
 						<script type="text/template">
-							## Deriving Aggregates
+							## Deriving Aggregators
 							
-							- An [Aggregate](#) is a function $h: A \rightarrow C$.
-							- Each [Aggregate](#) consists of 3 components:
+							- An [Aggregator](#) is a function $h: A \rightarrow C$.
+							- Each [Aggregator](#) consists of 3 components:
 							  1. A function $ f : A \rightarrow B $
 							  1. A [commutative monoid](https://en.wikipedia.org/wiki/Monoid#Commutative_monoid) 
 							     instance for type $B$.
@@ -323,7 +323,7 @@ key insights
 
 					<section data-markdown>
 						<script type="text/template">
-							## Deriving Aggregates
+							## Deriving Aggregators
 							
 							```scala
 							// Scala's standard library
@@ -347,7 +347,7 @@ key insights
 					
 					<section data-markdown>
 						<script type="text/template">
-							## Deriving Aggregates
+							## Deriving Aggregators
 						
 							```scala
 							// Scala's standard library
@@ -368,6 +368,7 @@ key insights
 							```
 						</script>
 					</section>
+					
 					<section data-markdown>
 						<script type="text/template">
 							## Quick Aside: Comm.&nbsp;Monoids
@@ -381,7 +382,7 @@ key insights
 							We can define a [Scala](http://www.scala-lang.org) `trait`:
 
 							```scala
-							trait CommutativeMonoid[A] {
+							trait CommMonoid[A] {
 							  def id: A
 							  def op(a: A, b: A): A
 							}
@@ -391,20 +392,80 @@ key insights
 					
 					<section data-markdown>
 						<script type="text/template">
-							## Deriving Aggregates
+							## Deriving Aggregators
 							
 							```scala
 							// Simplified version of actual code
-							trait Aggregate[A, B, C] {
+							trait Aggregator[A, B, C] {
 							  val f: A => B
-							  val m: CommutativeMonoid[B]
+							  val m: CommMonoid[B]
 							  val g: B => C
 
 
 
 							  // Scala standard lib
 							  def aggregate(xs: scala.collection.GenTraversableOnce[A]): C = 
-							    g(xs.aggregate(m.id)((x, y) => m.op(x, f(y)), m.op))
+
+
+
+
+
+							}
+							```
+							
+							Note: 
+							
+							4 choices to fill in.
+							
+							2 optimally efficient impls using all the data.
+							
+							Infinite non-optimal impls.
+							
+							Outer-most first.  What must go on the outside?
+						</script>
+					</section>
+
+					<section data-markdown>
+						<script type="text/template">
+							## Deriving Aggregators
+							
+							```scala
+							// Simplified version of actual code
+							trait Aggregator[A, B, C] {
+							  val f: A => B
+							  val m: CommMonoid[B]
+							  val g: B => C
+
+
+
+							  // Scala standard lib
+							  def aggregate(xs: scala.collection.GenTraversableOnce[A]): C = 
+							    g(xs.aggregate(    )((b, a) =>              ,     ))
+
+
+
+
+							}
+							```
+						</script>
+					</section>
+
+					<section data-markdown>
+						<script type="text/template">
+							## Deriving Aggregators
+							
+							```scala
+							// Simplified version of actual code
+							trait Aggregator[A, B, C] {
+							  val f: A => B
+							  val m: CommMonoid[B]
+							  val g: B => C
+
+
+
+							  // Scala standard lib
+							  def aggregate(xs: scala.collection.GenTraversableOnce[A]): C = 
+							    g(xs.aggregate(m.id)((b, a) =>              ,     ))
 
 
 
@@ -416,24 +477,74 @@ key insights
 					
 					<section data-markdown>
 						<script type="text/template">
-							## Deriving Aggregates
+							## Deriving Aggregators
 							
 							```scala
 							// Simplified version of actual code
-							trait Aggregate[A, B, C] {
+							trait Aggregator[A, B, C] {
 							  val f: A => B
-							  val m: CommutativeMonoid[B]
+							  val m: CommMonoid[B]
+							  val g: B => C
+
+
+
+							  // Scala standard lib
+							  def aggregate(xs: scala.collection.GenTraversableOnce[A]): C = 
+							    g(xs.aggregate(m.id)((b, a) =>              , m.op))
+
+
+
+
+							}
+							```
+						</script>
+					</section>
+					
+					<section data-markdown>
+						<script type="text/template">
+							## Deriving Aggregators
+							
+							```scala
+							// Simplified version of actual code
+							trait Aggregator[A, B, C] {
+							  val f: A => B
+							  val m: CommMonoid[B]
+							  val g: B => C
+
+
+
+							  // Scala standard lib
+							  def aggregate(xs: scala.collection.GenTraversableOnce[A]): C = 
+							    g(xs.aggregate(m.id)((b, a) => m.op(b, f(a)), m.op))
+
+
+
+
+							}
+							```
+						</script>
+					</section>
+					
+					<section data-markdown>
+						<script type="text/template">
+							## Deriving Aggregators
+							
+							```scala
+							// Simplified version of actual code
+							trait Aggregator[A, B, C] {
+							  val f: A => B
+							  val m: CommMonoid[B]
 							  val g: B => C
 
 							  // vvvvv   SAME IMPLEMENTATION!   vvvvv
 
 							  // Scala standard lib
 							  def aggregate(xs: scala.collection.GenTraversableOnce[A]): C = 
-							    g(xs.aggregate(m.id)((x, y) => m.op(x, f(y)), m.op))
+							    g(xs.aggregate(m.id)((b, a) => m.op(b, f(a)), m.op))
 
 							  // Spark
 							  def aggregate(xs: org.apache.spark.rdd.RDD[A]): C =
-							    g(xs.aggregate(m.id)((x, y) => m.op(x, f(y)), m.op))
+							    g(xs.aggregate(m.id)((b, a) => m.op(b, f(a)), m.op))
 							}
 							```
 						</script>
@@ -441,43 +552,164 @@ key insights
 
 					<section data-markdown>
 						<script type="text/template">
-							## Deriving Aggregates: Example Application
+							## Deriving Aggregators
+						
+							```scala
+							trait scala.collection.GenTraversableOnce[+A] {
+
+
+
+							  def aggregate[B](z: => B)(
+							                   seqop:   (B, A) => B, 
+
+
+
+
+							                   combop:  (B, B) => B): B
+
+
+
+
+							}
+							```
+						</script>
+					</section>
+
+					<section data-markdown>
+						<script type="text/template">
+							## Deriving Aggregators
+						
+							```scala
+							trait scala.collection.GenTraversableOnce[+A] {
+							//            monoid identity
+							//                 |
+							//                 v
+							  def aggregate[B](z: => B)(
+							                   seqop:   (B, A) => B, 
+							//                   ^          |
+							//                   |          | f
+							//               map/red op     |
+							//                              v
+							                   combop:  (B, B) => B): B
+							//                   ^
+							//                   |
+							//               reduce op = 
+							//               monoid op
+							}
+							```
+						</script>
+					</section>
+
+					<section data-markdown>
+						<script type="text/template">
+							## Deriving Aggregators
+						
+							```scala
+							trait scala.collection.GenTraversableOnce[+A] {
+							//            monoid identity
+							//                 |
+							//                 v
+							  def aggregate[B](m.id)(
+							                   seqop  = (b, a)   => m.op(b, f(a)),
+							//                   ^                          ^
+							//                   |                          | f
+							//               map/red op                     |
+							//
+							                   combop = (b1, b2) => m.op(b1, b2))
+							//                   ^
+							//                   |
+							//               reduce op = 
+							//               monoid op
+							}
+							```
+						</script>
+					</section>
+
+					<section data-markdown>
+						<script type="text/template">
+							## Deriving Aggregators
+						
+							```scala
+							trait scala.collection.GenTraversableOnce[+A] {
+							//            monoid identity
+							//                 |
+							//                 v
+							  def aggregate[B](m.id)(
+							                   seqop  = (b, a)   => m.op(b, f(a)),
+							//                   ^                          ^
+							//                   |                          | f
+							//               map/red op                     |
+							//
+							                   combop = m.op
+							//                   ^
+							//                   |
+							//               reduce op = 
+							//               monoid op
+							}
+							```
+						</script>
+					</section>
+
+					<section data-markdown>
+						<script type="text/template">
+							## Deriving Aggregators: Example Application
 							
 							```scala
-							object AdditiveDoubleMonoid extends CommutativeMonoid[Double] {
+							object AddMonoid extends CommMonoid[Double] {
 							  def id = 0d
 							  def op(a: Double, b: Double) = a + b
 							}
 							
-							case class BasicAgg[A, B, C](f: A => B,
-							                             m: CommutativeMonoid[B],
-							                             g: B => C) extends Aggregate[A, B, C]
+							case class Agg[A, B, C](f: A => B, m: CommMonoid[B], g: B => C) 
+							extends Aggregate[A, B, C]
 							```
 
 							And calling code ...
 							
 							```scala
-							     
 							// Euclidean norm is an Aggregate[Int, Double, Float]    
-							val eucNorm = BasicAgg((x: Int) => math.pow(x, 2), 
-							                       AdditiveDoubleMonoid, 
-							                       (x: Double) => math.sqrt(x).toFloat)
+							val eucNorm = Agg((x: Int) => math.pow(x, 2), 
+							                  AddMonoid, 
+							                  (x: Double) => math.sqrt(x).toFloat)
 
-							// 5, 12, 13 triangle.  Notice we use an Iterator.
+							// 5, 12, 13 triangle.  Notice use of Iterator.
 							assert(13f == eucNorm.aggregate(Iterator(5, 12)))
 							```
 						</script>
 					</section>
-					
+
+					<section data-markdown>
+						<script type="text/template">
+							## What does `aggregate` do?
+							
+							Preliminaries (*don't write like this in prod code*):
+							
+							```scala
+							// Return a function that adds 2 nums and prints the op.
+							def add(prefix: String) = 
+							  (a: Int, b: Int) => {
+							    val r = a + b
+							    println(s"$prefix$a + $b = $r")
+							    r
+							  }
+
+							// Sum using the fns returned by add.
+							def sum(xs: GenTraversableOnce[Int]): Int =
+							  xs.aggregate(0)(add("s: "), add("c:  "))
+							
+							def sumPartition(p: GenTraversableOnce[Int]): Int = {
+							  val r = sum(p);   println();  r 
+							}
+							```
+						</script>
+					</section>
+
 					<section data-markdown>
 						<script type="text/template">
 							## What does `aggregate` do?
 							
 							```scala
-							Seq(2, 3, 7, 11, 17, 29, 43, 59).par.
-							  aggregate(0)(
-							    (a, b) => { val r = a + b; println(s"s: $a + $b = $r"); r },
-							    (a, b) => { val r = a + b; println(s" c:  $a + $b = $r"); r })
+							sum(Seq(2, 3, 7, 11, 17, 29, 43, 59).par) // .par parallelizes
 							```
 							
 							Returns `171` and prints:
@@ -507,12 +739,12 @@ c:  23 + 148 = 171
 							<pre>
 ^                            171 = c(23,148)
 |                         /                  \
-|             23 = c(5,18)                   148 = c(46,102)
-4           /              \               /                \
-|    5 = c(2,3)      18 = c(7,11)    46 = c(17,29)     102 = c(43,59)
-|   /          \    /           \    /            \    /            \
-v  s(0,2)  s(0,3)  s(0,7)  s(0,11)  s(0,17)  s(0,29)  s(0,43)  s(0,59)
-
+|             23 = c(5,18)         |          148 = c(46,102)
+4           /              \       |        /                \
+|    5 = c(2,3)      18 = c(7,11)  |  46 = c(17,29)     102 = c(43,59)
+|   /          \    /           \  |  /            \    /            \
+v  s(0,2)  s(0,3)  s(0,7)  s(0,11) | s(0,17)  s(0,29)  s(0,43)  s(0,59)
+                                    
    <------------------------------ 8 -------------------------------->
 							</pre>
 							
@@ -521,11 +753,86 @@ v  s(0,2)  s(0,3)  s(0,7)  s(0,11)  s(0,17)  s(0,29)  s(0,43)  s(0,59)
 							
 							- *tree height* is logarithmic in input size
 							  - ($4 = 1+\log _{ 2 }{ 8 } $).
-							- *tree height* is related to runtime 
+							- *tree height* is related to runtime (*idealized*)
 							  - (*b/c we can parallelize "subtasks"*)
 							- *s* is `seqOp` and *c* is `combOp` in `aggregate`
 						</script>
 					</section>
+
+					<section data-markdown>
+						<script type="text/template">
+							## What does `aggregate` do?
+							
+							1. Create partitions
+							1. Map / reduce within partitions.
+							1. Reduce across partitions.
+							
+							```scala
+							val partition: Seq[Int] => Seq[Seq[Int]] = 
+							  (d: Seq[Int]) => d.grouped(((1d + d.size)/2).toInt).toSeq
+
+							val mapReduceWithin: Seq[Seq[Int]] => Seq[Int] = 
+							  (d: Seq[Seq[Int]]) => d.map(sumPartition)
+
+							val reduceAcross: Seq[Int] => Int = 
+							  (d: Seq[Int]) => d.foldLeft(0)(add("a: "))
+
+							val aggregate = 
+							  partition andThen mapReduceWithin andThen reduceAcross
+
+							assert( 171 == aggregate( Seq(2, 3, 7, 11, 17, 29, 43, 59) ) )
+							```
+						</script>
+					</section>
+
+					<section data-markdown>
+						<script type="text/template">
+							## What does `aggregate` do?
+
+							Prints:
+							
+							<pre>
+s: 0 + 2 = 2
+s: 2 + 3 = 5
+s: 5 + 7 = 12
+s: 12 + 11 = 23
+
+s: 0 + 17 = 17
+s: 17 + 29 = 46
+s: 46 + 43 = 89
+s: 89 + 59 = 148
+
+a: 0 + 23 = 23
+a: 23 + 148 = 171
+							</pre>
+						</script>
+					</section>
+
+					<section data-markdown>
+						<script type="text/template">
+							## What does `aggregate` do? 
+							<pre>
+                       171 = a(0, a(23, 148))
+                                / \
+                              /     \
+s(s(s(s(0, 2), 3), 7), 11) = 23  |  148 = s(s(s(s(0,17),29),43),59)
+                                 |  
+<-------  partition 1  ------->  |  <-------  partition 2  -------->
+							</pre>
+							
+														
+							Visualizing the results.  Notice:
+							
+							- partitions operate in linear time: $O(N/P)$
+							- combining partitions operates in linear time: $O(P)$
+							- parallel algorithm runtime: $O(N/P)$ when $ \frac{ N }{ P } \gg P$
+							
+							This is a more *realistic* version of how aggregate scales.
+						</script>
+					</section>
+
+
+
 					
 					<section data-markdown>
 						<script type="text/template">
@@ -548,16 +855,16 @@ v  s(0,2)  s(0,3)  s(0,7)  s(0,11)  s(0,17)  s(0,29)  s(0,43)  s(0,59)
 
 				<section data-markdown>
 					<script type="text/template">
-						## Combining Aggregates
+						## Combining Aggregators
 					</script>
 				</section>
 
 				<section>
 					<section data-markdown>
 						<script type="text/template">
-							## Combining Aggregates
+							## Combining Aggregators
 							
-							We can combine Aggregates to a single *combined* Aggregate by noting:
+							We can combine Aggregators to a single *combined* Aggregator by noting:
 							
 							1. A [product](https://en.wikipedia.org/wiki/Product_type) of 
 							   functions with a common 
@@ -576,7 +883,7 @@ v  s(0,2)  s(0,3)  s(0,7)  s(0,11)  s(0,17)  s(0,29)  s(0,43)  s(0,59)
 					
 					<section data-markdown>
 						<script type="text/template">
-							## Combining Aggregates
+							## Combining Aggregators
 
 							*Generically convert a product of functions to a function with
 							 a codomain as a product of the original codomains.*
@@ -603,7 +910,7 @@ v  s(0,2)  s(0,3)  s(0,7)  s(0,11)  s(0,17)  s(0,29)  s(0,43)  s(0,59)
 					
 					<section data-markdown>
 						<script type="text/template">
-							## Combining Aggregates
+							## Combining Aggregators
 
 							*Generically convert a product of commutative monoids to a 
 							 commutative monoid of products.*
@@ -621,7 +928,7 @@ v  s(0,2)  s(0,3)  s(0,7)  s(0,11)  s(0,17)  s(0,29)  s(0,43)  s(0,59)
 					
 					<section data-markdown>
 						<script type="text/template">
-							## Combining Aggregates
+							## Combining Aggregators
 
 							*Generically convert a product of commutative monoids to a 
 							 commutative monoid of products.*
@@ -648,13 +955,13 @@ v  s(0,2)  s(0,3)  s(0,7)  s(0,11)  s(0,17)  s(0,29)  s(0,43)  s(0,59)
 				<section>
 					<section data-markdown>
 						<script type="text/template">
-							## Aggregate Examples
+							## Aggregator Examples
 						</script>
 					</section>
 
 					<section data-markdown>
 						<script type="text/template">
-							## Aggregate Examples
+							## Aggregator Examples
 							
 							
 						</script>
