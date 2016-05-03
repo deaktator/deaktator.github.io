@@ -63,7 +63,43 @@
 						  - Examples
 					</script>
 				</section>
-				
+
+				<section data-markdown>
+					<script type="text/template">
+						## Background
+
+						- Bipartite graph: connections.
+						- Optimize something across entire network.
+						- Have global and per entity constraints
+
+						<img src="https://github.com/deaktator/maxflow-problems/raw/master/images/no_penalties.png" width="300px" />
+
+						<small>
+						Triples: (*min capacity*, *max capacity*, *penalty for including one unit of cap.*)
+						</small>
+
+					</script>
+				</section>
+				<section data-markdown>
+					<script type="text/template">
+						## Background
+
+						- Bipartite graph: connections.
+						- Optimize something across entire network.
+						- Have global and per entity constraints
+
+
+						| Problem | Solution |
+						| ------- | -------- |
+						| <img src="https://github.com/deaktator/maxflow-problems/raw/master/images/no_penalties.png" width="300px" /> | <img src="https://github.com/deaktator/maxflow-problems/raw/master/images/no_penalties_solution.png" width="300px" />
+
+						<small>
+							Triples: (*min capacity*, *max capacity*, *penalty for including one unit of cap.*)
+						</small>
+
+					</script>
+				</section>
+
 				<section data-markdown>
 					<script type="text/template">
 						## Motivation
@@ -285,6 +321,12 @@ key insights
 						- [Online algorithm](https://en.wikipedia.org/wiki/Online_algorithm) (*one node's adj. list at a time*) 
 						- Perform [map / reduce](https://en.wikipedia.org/wiki/MapReduce)
 						- Independently defined, easily combined
+
+						Note: 
+							
+						A little rhetorical, but ... 
+							
+						I've been watching the People vs OJ Simpson. 
 					</script>
 				</section>
 
@@ -928,6 +970,13 @@ s(s(s(s(0, 2), 3), 7), 11) = 23  |  148 = s(s(s(s(0,17),29),43),59)
 							      (p._1.op(a._1, b._1), p._2.op(a._2, b._2))
 							  }
 							```
+							
+							Note: 
+							*All or nothing*
+							
+							If just one of the monoids is not commutative, then 
+							the resulting product monoid is not a commutative monoid.
+							
 						</script>
 					</section>
 					
@@ -935,19 +984,17 @@ s(s(s(s(0, 2), 3), 7), 11) = 23  |  148 = s(s(s(s(0,17),29),43),59)
 						<script type="text/template">
 							## Combining Aggregators
 
-							*Generically convert a product of commutative monoids to a 
-							 commutative monoid of products.*
+							*Generically convert a product of Aggregators to an
+							 Aggregator of products.*
 
 							```scala
 							def pAgg[A, B, C, D, E](p: (Aggregate[A, B, C],
 							                            Aggregate[A, D, E])
 							                       ): Aggregate[A, (B, D), (C, E)] = {
-							  val (x, y) = p
-							  
 							  new Aggregate[A, (B, D), (C, E)] {
-							    val f = p2Fn((x.f, y.f))
-							    val m = p2CommMon((x.m, y.m))
-							    val g = p2Fn((x.g, y.g))
+							    val f = p2Fn((p._1.f, p._2.f))
+							    val m = p2CommMon((p._1.m, p._2.m))
+							    val g = p2Fn((p._1.g, p._2.g))
 							  }
 							}
 							```
@@ -955,39 +1002,249 @@ s(s(s(s(0, 2), 3), 7), 11) = 23  |  148 = s(s(s(s(0,17),29),43),59)
 							*This same process works for higher arity products.*
 						</script>
 					</section>
-				</section>
 
-				<section>
 					<section data-markdown>
 						<script type="text/template">
-							## Aggregator Examples
+							## Combining Aggregators
+
+							*That's complicated! Why not just combine at a higher level?*
+
+							```scala
+							def pAggFn[A, B, C, D, E](p: (Aggregate[A, B, C],
+							                              Aggregate[A, D, E])
+							                         ): A => (C, E) =
+							  (a: A) => (p._1.aggregate(a), p._2.aggregate(a))
+							```
+
+							&nbsp;
 						</script>
 					</section>
 
 					<section data-markdown>
 						<script type="text/template">
-							## Aggregator Examples
+							## Combining Aggregators
+
+							*That's complicated! Why not just combine at a higher level?*
+
+							```scala
+							def pAggFn[A, B, C, D, E](p: (Aggregate[A, B, C],
+							                              Aggregate[A, D, E])
+							                         ): A => (C, E) =
+							  (a: A) => (p._1.aggregate(a), p._2.aggregate(a))
+							```
 							
+							*Requires multiple passes over `a`!*
+						</script>
+					</section>
+
+					<section data-markdown>
+						<script type="text/template">
+							## Dirty little Secret
+
+							If we have a [functor](https://en.wikipedia.org/wiki/Functor) 
+							of Aggregates on the ***same domain*** and ***codomain***, 
+							we can:
 							
+							1. Fudge type information
+							1. Create a composite Aggregate on the functor type.
+							
+							*This is what is actually done.  It's a convenient way to 
+							accomplish the same thing, but it's less general.*
 						</script>
 					</section>
 				</section>
 
 				<section data-markdown>
 					<script type="text/template">
-						## Place Holder Slide
-						
-						Some Text
-
-						```scala
-						// Random scala code
-						def reduce[A](xs: TraversableOnce[A])(implicit 
-						              m: CommutativeMonoid[A]): A = 
-						  xs.foldLeft(m.id)(m.op)
-						```
+						## Aggregator Examples
 					</script>
 				</section>
 
+				<section data-markdown>
+					<script type="text/template">
+						## Aggregator Examples
+						- **Basic**
+						  - Count aggregates: # entities, # dyads
+						  - *Distinct* count aggregates.
+						- **Advanced (*Predictive*)**
+						  - Number of successes (&mu;, &sigma;)<small><sup>*</sup></small>
+						  - Distribution of number of successes<small><sup>*</sup></small>
+					</script>
+				</section>
+
+				<section data-markdown>
+					<script type="text/template">
+						## Num matches
+
+						- Optimize total # dyads.
+						  - *Quality is a secondary criterion*
+						  - **How**: *Heavily weight src, sink edges.*
+						- 1 &rarr; 1*M* = 1*M* &harr; 1*M*. Both have 1*M* edges.
+
+						<br /><br />
+
+						<small>
+						See `com.eharmony.matching.offline.distribution.logic.rewards.Rewards`
+						</small>
+					</script>
+				</section>
+
+				<section data-markdown>
+					<script type="text/template">
+						## Num entities
+
+						- Optimize total # unique entities in dyads.
+						- *Quality is a secondary criterion **for first match***
+						- **How**: *Heavily weight 1st src, sink edge per entity.*
+						- 1 &rarr; 1*M* &nbsp; &nbsp;**<** &nbsp; &nbsp; 1*M* &harr; 1*M*.
+
+						<br /><br />
+
+						<small>
+							See `com.eharmony.matching.offline.distribution.logic.rewards.Rewards`
+						</small>
+					</script>
+				</section>
+
+				<section>
+					<section data-markdown>
+						<script type="text/template">
+							## Number of successes
+
+							1. No bonus / penalty
+							1. scores are probabilities
+
+							THEN optimizing the following are the same:
+
+							1. sum of scores
+							1. expected successes
+
+						</script>
+					</section>
+					<section>
+						<h2>Number of successes</h2>
+						<ul>
+							<li>Assuming <em>IID</em><small><sup><em>1</em></sup></small></li>
+							<li>Distributed by <a href="http://deaktator.github.io/2015/08/09/poisson-binomial-distribution/">Poisson binomial distribution</a></li>
+							<li>Point estimate and confidence interval:</li>
+							<ul>
+								<li>&mu; -  $ \sum { { p }_{ i }  } $</li>
+								<li>&sigma; - $ \sqrt { \sum { (1-{ p }_{ i }){ p }_{ i } }  } $</li>
+								<li>Use <a href="https://en.wikipedia.org/wiki/1.96">Z score for 97.5 percentile</a> to construct 95% CI</li>
+							</ul>
+							<li><em>Works well on large graphs</em><small><sup><em>2</em></sup></small></li>
+						</ul>
+
+						<br/>
+						<br/>
+
+						<small>
+							<ol>
+								<li>Assumed in <a href="#/4">slide 5</a></li>
+								<li>See <a href="https://en.wikipedia.org/wiki/Central_limit_theorem">Central limit theorem</a></li>
+							</ol>
+						</small>
+					</section>
+				</section>
+
+				<section>
+					<section data-markdown>
+						<script type="text/template">
+							## Successes per entity
+
+							![distribution of successes](img/dist_success.png)
+						</script>
+					</section>
+					<section data-markdown>
+						<script type="text/template">
+							## Successes per entity
+
+							1. $\overrightarrow { X } = \overrightarrow { 0 }$
+							1. For each node adjacency list:
+							1. &nbsp; &nbsp;$\overrightarrow { V } $ = [Binomial poisson PMF](http://deaktator.github.io/2016/02/12/poisson-binomial-revisited/) of adj list probs.
+							  - (*Pad $\overrightarrow { V } $ on the right with zeroes if necessary.*)
+							1. &nbsp; &nbsp;$\overrightarrow { X } = \overrightarrow { X } + \overrightarrow { V }$
+							1. $\overrightarrow { X } = \frac { 1 }{ N } \overrightarrow { X }$, &nbsp; where *N* = # of nodes.
+						</script>
+					</section>
+				</section>
+
+				<section data-markdown>
+					<script type="text/template">
+						## What's best to optimize?
+					</script>
+				</section>
+
+				<section data-markdown>
+					<script type="text/template">
+						## Don't Know!
+					</script>
+				</section>
+
+				<section data-markdown>
+					<script type="text/template">
+						## Can Test!
+					</script>
+				</section>
+
+				<section data-markdown>
+					<script type="text/template">
+						## Even Better
+						## manipulate scores
+
+						```scala
+						// A function that takes a list of scores and returns a
+						// function that takes a score, and returns a (possibly new) score.
+
+						List[S] => S => S
+						```
+
+						&nbsp;
+					</script>
+				</section>
+
+				<section data-markdown>
+					<script type="text/template">
+						## Even Better
+						## manipulate scores
+
+						```scala
+						// A function that takes a list of scores and returns a
+						// function that takes a score, and returns a (possibly new) score.
+
+						List[S] => S => S
+						```
+
+						Examples?
+					</script>
+				</section>
+
+				<section data-markdown>
+					<script type="text/template">
+						## Score Transformations
+
+						- normalized score (div by best)
+						- rank
+						- normalized rank
+
+					</script>
+				</section>
+
+				<section data-markdown>
+					<script type="text/template">
+						## Let's get testing!
+					</script>
+				</section>
+
+				<section data-markdown>
+					<script type="text/template">
+						# Thank You
+
+						### Ryan Deak / [@deaktator](http://twitter.com/deaktator)
+
+						[deaktator.github.io/presentations/bipartite-stats](https://deaktator.github.io/presentations/bipartite-stats)
+					</script>
+				</section>
 
 			</div> <!-- slides -->
 		</div>
