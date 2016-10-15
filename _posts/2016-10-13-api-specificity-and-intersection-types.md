@@ -117,7 +117,7 @@ encoded using intersection types, the concrete type cannot be specified as an in
 The second way in which this strategy falls short is in static methods.  This doesn't help static 
 methods in any way.  As a *hackish* workaround, one could move the type parameter encoding the 
 intersection type to the method.  This seems like a faux pas because the return value must be cast
-and the Java compiler will issue a "*Unchecked cast*" warning, indicating this may result in future
+and the Java compiler will issue an "*Unchecked cast*" warning, indicating this may result in future
 issues.  And this is indeed possible here.  Any API user could inadvertently subvert the benefits 
 of this strategy by supplying a valid type argument to the method, which adheres to the type bounds,
 but that disagrees with the actual type of the value returned by the method.  In which case, a 
@@ -194,7 +194,7 @@ scala> listSize(new LinkedList[Float])
                        ^
 {% endhighlight %}
 
-And ones that do adhere are successfully accept like in the case of `java.util.ArrayList` (which 
+And ones that do adhere are successfully accepted like in the case of `java.util.ArrayList` (which 
 is a random access list): 
 
 {% highlight scala %}
