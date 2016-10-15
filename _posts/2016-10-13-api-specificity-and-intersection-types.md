@@ -113,7 +113,7 @@ public interface MyScorer extends <Float[], ArrayList<Float>> {
 {% endhighlight %}
 
 where `ArrayList` again appears in the type signatures.  This is because while type bounds can be
-encoded using intersection types, the concrete type cannot be specified as an intersection type.  
+encoded using intersection types, the concrete type cannot be specified as an intersection type. 
 The second way in which this strategy falls short is in static methods.  This doesn't help static 
 methods in any way.  As a *hackish* workaround, one could move the type parameter encoding the 
 intersection type to the method.  This seems like a faux pas because the return value must be cast
