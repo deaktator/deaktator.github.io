@@ -209,7 +209,7 @@ module or [`Score`](https://github.com/eHarmony/aloha-proto/blob/master/src/main
 and the consumer is expecting a classifier result like a string or
 integer but the factory instantiates a regression model with a real-valued
 natural output type, then the consumer will encounter an error and the team
-responsible for the factory will may be oblivious.  This situation can be
+responsible for the factory may be oblivious.  This situation can be
 exacerbated when the scoring infrastructure (factories and models) is under the
 control of a different team than the one that *produces* models.  This type
 constraint can be seen as a consistency check across teams to ensure, within
