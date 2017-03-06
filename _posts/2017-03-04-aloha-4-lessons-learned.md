@@ -150,18 +150,19 @@ functions were added (`Option`s and `Either`s), I had to allow `Score` instances
 to be produced in the model implementations.  The other problem, which is
 totally my fault is that `Option`s can easily be created via `Either`s via
 `scoreAsEither(a).right.toOption`.  But since this was a nuisance, I added the
-addition `apply` method.  This clearly violates the first lesson about providing
+`apply` method.  This clearly violates the first lesson about providing
 multiple ways to accomplish a desired goal.
 
 ### 4.0.0 Models
 
-Model are simply functions with identifiers and can be cleaned up.  Dead simple.
+Models are simply functions with identifiers and can be cleaned up.  Dead simple.
 *Enough said!*
 
 {% highlight scala %}
-trait Model[-A, +B] extends (A => B)
-                       with Identifiable[ModelIdentity]
-                       with Closeable
+trait Model[-A, +B]
+extends (A => B)
+   with Identifiable[ModelIdentity]
+   with Closeable
 {% endhighlight %}
 
 ## Auditing
@@ -182,7 +183,7 @@ Because of this, I could easily remove of the protobuf dependency in
 One additional thing to notice is the type parameters in `Auditor`.  This easily
 could have been done with a
 [unary type constructor](https://en.wikipedia.org/wiki/Kind_(type_theory)#Examples)
-(*e.g.* `Auditor[M[_], A]`), but I already put so much effort into making
+(*e.g.* `Auditor[M[_], N]`), but I already put so much effort into making
 [Aloha](https://github.com/eHarmony/aloha) work with Java that I didn't want to
 introduce this into an important API.  This leads to lesson three:
 
