@@ -216,7 +216,7 @@ constraint can be seen as a consistency check across teams to ensure, within
 reason, that an appropriate class of models will be used on the problem domain.
 So, if `N` is incongruous with the natural output type of a model that the factory
 attempts to produce, the factory may raise an error at model creation time and
-avoid this situation entirely.  This leads the fourth lesson:
+avoid this situation entirely.  This leads the to fourth lesson:
 
 > Fail early by design.
 
