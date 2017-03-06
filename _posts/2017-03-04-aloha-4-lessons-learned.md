@@ -197,7 +197,7 @@ introduce this into an important API.  This leads to lesson three:
 Since [ModelFactoryImpl](https://github.com/eHarmony/aloha/blob/master/aloha-core/src/main/scala/com/eharmony/aloha/factory/ModelFactory.scala)
 is parameterized by a
 [`MorphableAuditor[U,N,B]`](https://github.com/eHarmony/aloha/blob/master/aloha-core/src/main/scala/com/eharmony/aloha/audit/MorphableAuditor.scala), `ModelFactoryImpl` is also
-parameterized the type `N`, the natural output type of the top-level models it produces.
+parameterized by the type `N`, the natural output type of the top-level models it produces.
 Parameterizing the `ModelFactoryImpl` by `N` could have been avoided because
 morphable auditors can create new auditors for a different natural output type
 but I *want* Aloha users to know the natural output type of the models produced
