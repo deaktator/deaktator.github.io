@@ -112,7 +112,7 @@ in at least one successful match is one minus the probability of being involved 
 for an entity, $$ a $$, we aggregate the matches involving $$ a $$, we can write the probability of $$ a $$ being
 in at least one successful match as: 
 
-$$ 1 - \sum _{ i\in { M }_{ a } }{ \left( 1-{ p }_{ ai } \right) } \quad (1) $$
+$$ 1 - \prod _{ i\in { M }_{ a } }{ \left( 1-{ p }_{ ai } \right) } \quad (1) $$
 
 where $$ M_{a} $$ is the set of matches involving $$ a $$.  Then if we want to calculate the distribution of the 
 number entities involved in at least one successful match, the appropriate distribution is the
@@ -123,7 +123,7 @@ calculate the expectation, we take the sum of the probabilities of the entity be
 This is just:
 
 $$
-\sum _{ i=1 }^{ N }{ \left( 1-\sum _{ j\in { M }_{ i } }{ \left( 1-{ p }_{ ij } \right)  }  \right)  } 
+\sum _{ i=1 }^{ N }{ \left( 1-\prod _{ j\in { M }_{ i } }{ \left( 1-{ p }_{ ij } \right)  }  \right)  }
 $$
 
 It may not be immediately obvious but this algorithm is $$ O(N) $$ where $$ N $$ is the number of matches.  Here's the
