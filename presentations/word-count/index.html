@@ -1,0 +1,548 @@
+<!doctype html>
+<html lang="en">
+
+	<head>
+		<meta charset="utf-8">
+
+		<title>Yet Another Word Count Tutorial</title>
+
+		<meta name="description" content="Yet Another MapReduce Word Count Tutorial">
+		<meta name="author" content="Ryan Deak">
+
+		<meta name="apple-mobile-web-app-capable" content="yes">
+		<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, minimal-ui">
+
+		<link rel="stylesheet" href="../revealjs/css/reveal.css">
+		<link rel="stylesheet" href="../revealjs/css/theme/sky.css" id="theme">
+
+		<!-- Code syntax highlighting -->
+		<link rel="stylesheet" href="../highlightjs/css/github-gist.css">
+
+
+		<!-- Printing and PDF exports -->
+		<script>
+			var link = document.createElement( 'link' );
+			link.rel = 'stylesheet';
+			link.type = 'text/css';
+			link.href = window.location.search.match( /print-pdf/gi ) ? '../revealjs/css/print/pdf.css' : '../revealjs/css/print/paper.css';
+			document.getElementsByTagName( 'head' )[0].appendChild( link );
+		</script>
+
+		<!--[if lt IE 9]>
+		<script src="../revealjs/lib/js/html5shiv.js"></script>
+		<![endif]-->
+	</head>
+
+	<body>
+
+		<div class="reveal">
+
+			<!-- Any section element inside of this container is displayed as a slide -->
+			<div class="slides">
+				<section>
+					<h1>Yet Another Word Count Tutorial</h1>
+					<p>
+						<small>
+							Ryan Deak 
+							&middot; <a href="https://deaktator.github.io">deaktator.github.io</a> 
+							&middot; <a href="https://twitter.com/deaktator">@deaktator</a>
+						</small>
+					</p>
+				</section>
+
+				<section data-markdown>
+					<script type="text/template">
+						## Why word count?
+
+						- Provides a good vehicle for learning.
+						- *Can easily be parallelized!*
+						- Is the typical introduction to MapReduce.
+					</script>
+				</section>
+
+				<section data-markdown>
+					<script type="text/template">
+						## Outline
+						1. [Grouped word count](#/3)
+						1. [Spark word count](#/4)
+						1. [Breaking down MapReduce](#/5)
+						1. [Rolling our own word count](#/6)
+					</script>
+				</section>
+
+				<section>
+					<section data-markdown>
+						<script type="text/template">
+							## Grouped Word Count
+
+							```scala
+							val words = Seq("a", "b", "a", "c")
+
+							val counts = words.groupBy(identity)
+							                  .mapValues(_.size)
+							```
+
+							Output
+
+							```scala
+							// Order adjusted for presentation.
+							Map(("a" → 2), ("b" → 1), ("c" → 1))
+							```
+						</script>
+					</section>
+
+					<section data-markdown>
+						<script type="text/template">
+							## Problems w/ Grouped WC
+
+							- Creates intermediate `Seq`s in map values.
+							```scala
+							def groupBy[K](f: A ⇒ K): Map[K, Seq[A]]
+							```
+							- [`groupBy`](http://www.scala-lang.org/api/current/scala/collection/GenTraversableLike.html#groupBy%5BK%5D%28f%3AA%3D%3EK%29%3Ascala.collection.GenMap%5BK%2CRepr%5D) defined in [`GenTraversableLike`](http://www.scala-lang.org/api/current/scala/collection/GenTraversableLike.html)
+							- <s>[`TraversableOnce`](http://www.scala-lang.org/api/current/scala/collection/TraversableOnce.html)</s> (*e.g.* <s>[`Iterator`](http://www.scala-lang.org/api/current/scala/collection/Iterator.html)</s>) &#x1f61e;
+							- Grouped WC requires two passes:
+							1. One over input.
+							1. One over counts map.
+
+						</script>
+					</section>
+				</section>
+
+				<section>
+					<section data-markdown>
+						<script type="text/template">
+							## Spark Word Count
+
+							Spark [examples page](https://spark.apache.org/examples.html) has WC (*of course*).
+
+							(*very slightly modified here*)
+
+							```scala
+							val words = sc.textFile("hdfs://...")
+							              .flatMap(line => line.split(" "))
+
+							val counts = words.map(word => (word, 1))
+							                  .reduceByKey(_ + _)
+							```
+						</script>
+					</section>
+					<section data-markdown>
+						<script type="text/template">
+							## Spark Word Count
+
+							"*So simple, right?*"  Just `map` then `reduce` (*by key*)!
+						</script>
+					</section>
+				</section>
+
+				<section>
+					<section data-markdown>
+						<script type="text/template">
+							## Breaking down MapReduce
+
+							#### What are we really doing?
+						</script>
+					</section>
+					<section data-markdown>
+						<script type="text/template">
+							## Breaking down MapReduce
+
+							What's really done in the reduce phase?
+
+							```scala
+							reduceByKey(_ + _)
+							```
+
+							is shorthand for
+
+							```scala
+							reduceByKey((x: Int, y: Int) => Int = x + y)
+							```
+
+							&nbsp; <br />
+							&nbsp;
+						</script>
+					</section>
+					<section data-markdown>
+						<script type="text/template">
+							## Breaking down MapReduce
+
+							What's really done in the reduce phase?
+
+							```scala
+							reduceByKey(_ + _)
+							```
+
+							is shorthand for
+
+							```scala
+							reduceByKey((x: Int, y: Int) => Int = x + y)
+							```
+
+							Reducing values associated with each key via a <br />
+							[commutative](https://en.wikipedia.org/wiki/Commutative_property) [semigroup](https://en.wikipedia.org/wiki/Semigroup) on the values.
+						</script>
+					</section>
+					<section data-markdown>
+						<script type="text/template">
+							## Wait, What's a Semigroup?
+						</script>
+					</section>
+					<section data-markdown>
+						<script type="text/template">
+							## Semigroup
+
+							> "An algebraic structure consisting of a set together with an associative binary operation."
+							> &mdash; [Wikipedia](https://en.wikipedia.org/wiki/Semigroup)
+
+							```scala
+							trait Semigroup[A] {
+							  // "associative" means
+							  //   combine(x, combine(y, z)) ==
+							  //   combine(combine(x, y), z)
+							  def combine(x: A, y: A): A
+							}
+							```
+						</script>
+					</section>
+					<section data-markdown>
+						<script type="text/template">
+							## Breaking down MapReduce
+
+							- `map` words to key-value pairs.
+							- `reduce` values associated w/ each key using semigroup.
+						</script>
+					</section>
+					<section data-markdown>
+						<script type="text/template">
+							## Breaking down MapReduce
+
+							#### ***IMPORTANT***: We can reduce entire *kv pairs !*
+						</script>
+					</section>
+					<section data-markdown>
+						<script type="text/template">
+							## MapReduce
+
+							- "**MapReduce**" means `map` *and then* `reduce`.
+							- *Mathematically*: &nbsp; `reduce` &compfn; `map`
+							- *Replace* `reduce` with [`fold`](https://en.wikipedia.org/wiki/Fold_%28higher-order_function%29): &nbsp; `fold` &compfn; `map`
+							- *Combine to get*: &nbsp; [`foldMap`](http://typelevel.org/cats/api/cats/Foldable.html#foldMap%5BA%2CB%5D%28fa%3AF%5BA%5D%29%28f%3AA%3D%3EB%29%28implicitB%3Acats.Monoid%5BB%5D%29%3AB)
+						</script>
+					</section>
+					<section data-markdown>
+						<script type="text/template">
+							## To Follow Along ...
+
+							```bash
+							which sbt || brew install sbt
+
+							git clone https://github.com/deaktator/learn-cats.git
+							cd learn-cats
+
+							sbt console
+							```
+						</script>
+					</section>
+					<section data-markdown>
+						<script type="text/template">
+							## foldMap
+
+							```scala
+							import cats.implicits._
+
+							val words = Vector("a", "b", "a", "c")
+
+							// : Map[String, Int]
+							val counts = words foldMap (w => Map(w -> 1))
+							```
+
+							Output
+
+							```scala
+							// Order adjusted for presentation.
+							Map("a" → 2, "b" → 1, "c" → 1)
+							```
+						</script>
+					</section>
+
+					<section data-markdown>
+						<script type="text/template">
+							## foldMap ?
+
+							```scala
+							trait Foldable[F[_]] {
+							  // [ Other stuff ] ...
+
+							  def foldMap[A, B](fa: F[A])(f: A ⇒ B)(implicit B: Monoid[B]): B
+							}
+							```
+						</script>
+					</section>
+					<section data-markdown>
+						<script type="text/template">
+							## foldMap ?
+
+							So, we can `map` &amp; `reduce` via `foldMap` given:
+
+							- `F[A]` - a container of type `F` with elements of type `A`
+							- a [`Foldable`](http://typelevel.org/cats/api/cats/Foldable.html) type class instance for `F`
+							- a function `f` of type `A ⇒ B`
+							- a [`Monoid`](http://typelevel.org/cats/api/cats/kernel/Monoid.html) type class instance for `B`.
+						</script>
+					</section>
+					<section data-markdown>
+						<script type="text/template">
+							## Wait, Monoids Now?
+							## Come on!
+						</script>
+					</section>
+
+					<section data-markdown>
+						<script type="text/template">
+							## Monoid
+
+							> "An algebraic structure with a single associative binary operation and an identity element."
+							> &mdash; [Wikipedia](https://en.wikipedia.org/wiki/Monoid)
+
+							```scala
+							trait Monoid[A] extends Semigroup[A] {
+							  def empty: A
+							}
+							```
+						</script>
+					</section>
+
+					<section data-markdown>
+						<script type="text/template">
+							## foldMap: Why Monoid?
+
+							`foldMap` expects a monoid so in case the container is empty, `foldMap` can
+							still return an element of type `B`.
+						</script>
+					</section>
+					<section data-markdown>
+						<script type="text/template">
+							## foldMap Imports
+
+							```scala
+							// type ":reset" into REPL
+
+							// Bring in Foldable type class for Vector.
+							import cats.instances.vector.catsStdInstancesForVector
+
+							// Bring in Monoid for Map.
+							import cats.instances.map.catsKernelStdMonoidForMap
+
+							// Bring in Semigroup for Int (Map's value type).
+							import cats.instances.int.catsKernelStdGroupForInt
+
+							// Bring in syntax to add foldMap to Vector.
+							import cats.syntax.foldable.toFoldableOps
+
+							Vector("a", "b", "a", "c") foldMap (w => Map(w -> 1))
+							```
+						</script>
+					</section>
+					<section data-markdown>
+						<script type="text/template">
+							## foldMap Monoid
+
+							```scala
+							// type ":reset" into REPL
+
+							import cats.instances.vector.catsStdInstancesForVector
+							import cats.instances.map.catsKernelStdMonoidForMap
+							import cats.instances.int.catsKernelStdGroupForInt
+							import cats.syntax.foldable.toFoldableOps
+							import cats.Monoid
+
+							// Compile does this automatically, given proper imports.
+							val m = Monoid[Map[String, Int]]
+							Vector("a", "b", "a", "c").foldMap(w => Map(w -> 1))(m)
+							```
+						</script>
+					</section>
+				</section>
+
+				<section>
+					<section data-markdown>
+						<script type="text/template">
+							## Rolling Our Own
+							## Word Count
+						</script>
+					</section>
+					<section data-markdown>
+						<script type="text/template">
+							## Rolling Our Own ...
+
+							- **Q**: How does the `Map` `Monoid` work?
+							- **A**: It's an *implicit* fn that transforms a `Semigroup`
+							  in the implicit scope to a `Monoid` that combines
+							  values with the same key (using the `Semigroup`).
+
+							```scala
+							implicit def mapMonoid[K, V](implicit s: Semigroup[V]) =
+							new Monoid[Map[K, V]] {
+							  def empty: Map[K, V] = Map.empty[K, V]
+
+							  def combine(x: Map[K, V], y: Map[K, V]): Map[K, V] =
+							    y.foldLeft(x){ case (m, (k, vx)) =>
+							      m + (k -> m.get(k).fold(vx)(vy => s.combine(vx, vy)))
+							    }
+							}
+							```
+						</script>
+					</section>
+					<section data-markdown>
+						<script type="text/template">
+							## Rolling Our Own ...
+
+							Now that we've got a `Monoid`
+
+							```scala
+							import scala.collection.{GenTraversable, TraversableOnce}
+
+							def streamingWordCount[A](as: TraversableOnce[A])
+							                         (implicit m: Monoid[Map[A, Int]]) =
+							  as.foldLeft(m.empty)((s, a) => m.combine(s, Map(a -> 1)))
+
+
+							def parallelWordCount[A](as: GenTraversable[A])
+							                        (implicit m: Monoid[Map[A, Int]]) =
+							  as.par.aggregate(m.empty)(
+							    (s, a) => m.combine(s, Map(a -> 1)),
+							    m.combine
+							  )
+							```
+						</script>
+					</section>
+					<section data-markdown>
+						<script type="text/template">
+							## Refactoring a Little
+
+							```scala
+							def streamingWordCount[A](as: TraversableOnce[A])
+							                         (implicit m: Monoid[Map[A, Int]]) = {
+							  def f(a: A) = Map(a -> 1)
+							  as.foldLeft(m.empty)((s, a) => m.combine(s, f(a)))
+							}
+
+
+							def parallelWordCount[A](as: GenTraversable[A])
+							                        (implicit m: Monoid[Map[A, Int]]) = {
+							  def f(a: A) = Map(a -> 1)
+							  as.par.aggregate(m.empty)((s, a) => m.combine(s, f(a)), m.combine)
+							}
+							```
+						</script>
+					</section>
+					<section data-markdown>
+						<script type="text/template">
+							## Refactoring a Little
+
+							```scala
+							def streamingFoldMap[A, B](as: TraversableOnce[A])(f: A => B)
+							                          (implicit m: Monoid[B]) =
+							  as.foldLeft(m.empty)((s, a) => m.combine(s, f(a)))
+
+
+							def parallelFoldMap[A, B](as: GenTraversable[A])(f: A => B)
+							                         (implicit m: Monoid[B]) =
+							  as.par.aggregate(m.empty)((s, a) => m.combine(s, f(a)), m.combine)
+							```
+						</script>
+					</section>
+					<section data-markdown>
+						<script type="text/template">
+							## What Have We Done?
+						</script>
+					</section>
+					<section data-markdown>
+						<script type="text/template">
+							## What Have We Shown?
+
+							- Learned a little abstract algebra.
+							- Streaming and parallel versions of word count.
+							- Generalization giving implementations of `foldMap`.
+							- The heart of MapReduce.  "*The rest is just shuffling.*"
+						</script>
+					</section>
+				</section>
+
+				<section>
+					<section data-markdown>
+						<script type="text/template">
+							## Further Exploration
+
+							There's lots more theory to learn and generalizing to do.  For more information:
+
+							1. Look at [typelevel/cats](http://typelevel.org/cats/) for Scala.
+							1. Do some exercises at [scala-exercises.org](https://www.scala-exercises.org/).
+							1. Look at Haskell docs (*sounds weird but it's great*)
+						</script>
+					</section>
+				</section>
+
+				<!-- ========================================================================== -->
+				<!--                         End of                                                    -->
+				<!-- ========================================================================== -->
+
+				<section data-markdown>
+					<script type="text/template">
+						# Questions?
+					</script>
+				</section>
+
+				<section data-markdown>
+					<script type="text/template">
+						# Thank You
+
+						### Ryan Deak / [@deaktator](http://twitter.com/deaktator)
+
+						[deaktator.github.io/presentations/word-count](https://deaktator.github.io/presentations/word-count)
+					</script>
+				</section>
+
+			</div> <!-- slides -->
+		</div>
+
+		<script src="../revealjs/lib/js/head.min.js"></script>
+		<script src="../revealjs/js/reveal.js"></script>
+
+		<script>
+
+			// Full list of configuration options available at:
+			// https://github.com/hakimel/reveal.js#configuration
+			Reveal.initialize({
+				controls: true,
+				progress: true,
+				history: true,
+				center: true,
+				slideNumber: true,
+
+				transition: 'fade', // none/fade/slide/convex/concave/zoom
+
+				math: {
+					mathjax: 'https://cdn.mathjax.org/mathjax/latest/MathJax.js',
+					config: 'TeX-AMS_HTML-full'
+				},
+
+				// Optional reveal.js plugins
+				dependencies: [
+					{ src: '../revealjs/lib/js/classList.js', condition: function() { return !document.body.classList; } },
+					{ src: '../revealjs/plugin/markdown/marked.js', condition: function() { return !!document.querySelector( '[data-markdown]' ); } },
+					{ src: '../revealjs/plugin/markdown/markdown.js', condition: function() { return !!document.querySelector( '[data-markdown]' ); } },
+					{ src: '../revealjs/plugin/highlight/highlight.js', async: true, callback: function() { hljs.initHighlightingOnLoad(); } },
+// 					{ src: '../revealjs/plugin/zoom-js/zoom.js', async: true },
+					{ src: '../revealjs/plugin/notes/notes.js', async: true },
+					{ src: '../revealjs/plugin/math/math.js', async: true }
+				]
+			});
+
+		</script>
+	</body>
+</html> 
