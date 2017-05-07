@@ -486,7 +486,7 @@
 							}
 
 							def cycle(m: Int, n: Int, start: Int = 0) =
-							  Iterator.iterate(start)(x => (x + 1) % m).take(n)
+							  Iterator.iterate(start % m)(x => (x + 1) % m).take(n)
 							val n = math.pow(10, 7).toInt
 							val i = cycle(5, n)
 							val v = ParVector(cycle(5, n).toStream: _*)
