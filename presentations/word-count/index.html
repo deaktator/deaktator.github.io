@@ -386,13 +386,15 @@
 							  values with the same key (using the `Semigroup`).
 
 							```scala
+							import cats.{Monoid, Semigroup}
+
 							implicit def mapMonoid[K, V](implicit s: Semigroup[V]) =
 							new Monoid[Map[K, V]] {
 							  def empty: Map[K, V] = Map.empty[K, V]
 
 							  def combine(x: Map[K, V], y: Map[K, V]): Map[K, V] =
-							    y.foldLeft(x){ case (m, (k, vx)) =>
-							      m + (k -> m.get(k).fold(vx)(vy => s.combine(vx, vy)))
+							    y.foldLeft(x){ case (m, (k, vy)) =>
+							      m + (k -> m.get(k).fold(vy)(vx => s.combine(vx, vy)))
 							    }
 							}
 							```
@@ -447,13 +449,25 @@
 
 							```scala
 							def streamingFoldMap[A, B](as: TraversableOnce[A])(f: A => B)
-							                          (implicit m: Monoid[B]) =
+							                          (implicit m: Monoid[B]): B =
 							  as.foldLeft(m.empty)((s, a) => m.combine(s, f(a)))
 
-
 							def parallelFoldMap[A, B](as: GenTraversable[A])(f: A => B)
-							                         (implicit m: Monoid[B]) =
+							                         (implicit m: Monoid[B]): B =
 							  as.par.aggregate(m.empty)((s, a) => m.combine(s, f(a)), m.combine)
+							```
+
+							And Word Count is just:
+
+							```scala
+							// For the Int semigroup.
+							import cats.instances.int.catsKernelStdGroupForInt
+
+							def streamingWordCount[A](as: TraversableOnce[A]): Map[A, Int] =
+							  streamingFoldMap(as)(a => Map(a -> 1))
+
+							def parallelWordCount[A](as: GenTraversable[A]): Map[A, Int] =
+							  parallelFoldMap(as)(a => Map(a -> 1))
 							```
 						</script>
 					</section>
