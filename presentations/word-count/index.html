@@ -105,8 +105,8 @@
 							- [`groupBy`](http://www.scala-lang.org/api/current/scala/collection/GenTraversableLike.html#groupBy%5BK%5D%28f%3AA%3D%3EK%29%3Ascala.collection.GenMap%5BK%2CRepr%5D) defined in [`GenTraversableLike`](http://www.scala-lang.org/api/current/scala/collection/GenTraversableLike.html)
 							- <s>[`TraversableOnce`](http://www.scala-lang.org/api/current/scala/collection/TraversableOnce.html)</s> (*e.g.* <s>[`Iterator`](http://www.scala-lang.org/api/current/scala/collection/Iterator.html)</s>) &#x1f61e;
 							- Grouped WC requires two passes:
-							1. One over input.
-							1. One over counts map.
+							  1. One over input.
+							  1. One over counts map.
 
 						</script>
 					</section>
@@ -361,7 +361,7 @@
 							import cats.syntax.foldable.toFoldableOps
 							import cats.Monoid
 
-							// Compile does this automatically, given proper imports.
+							// Compiler does this automatically, given proper imports.
 							val m = Monoid[Map[String, Int]]
 							Vector("a", "b", "a", "c").foldMap(w => Map(w -> 1))(m)
 							```
