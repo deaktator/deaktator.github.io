@@ -485,8 +485,8 @@
 							  (r, (1.0e-9 * (t2 - t)).toFloat)
 							}
 
-							def cycle(m: Int, n: Int) =
-							  Iterator.iterate(0)(x => (x + 1) % m).take(n)
+							def cycle(m: Int, n: Int, start: Int = 0) =
+							  Iterator.iterate(start)(x => (x + 1) % m).take(n)
 							val n = math.pow(10, 7).toInt
 							val i = cycle(5, n)
 							val v = ParVector(cycle(5, n).toStream: _*)
@@ -496,6 +496,30 @@
 							```
 						</script>
 					</section>
+					<section data-markdown>
+						<script type="text/template">
+							## Fold w/ Future Monoid
+
+							```scala
+							import scala.concurrent.ExecutionContext.Implicits.global
+							import scala.concurrent.{Await, Future}
+							import scala.concurrent.duration._
+							import cats.Foldable, cats.instances.all._
+
+							// ~1.8s MBP MC373LL/A
+							val counts = time {
+							  // Use Monoid[Future] to fold Vector[Future[Map[Int, Int]]].
+							  val fs: Future[Map[Int, Int]] = Foldable[Vector].fold(
+							    // Asynchronously fire off a bunch of Futures doing some work.
+							    Vector.range(0, n, n / 4)
+							          .map(s => Future(streamingWordCount(cycle(5, n / 4, s))))
+							  )
+							  Await.result(fs, 5.seconds)
+							}
+							```
+						</script>
+					</section>
+
 					<section data-markdown>
 						<script type="text/template">
 							## What Have We Done?
