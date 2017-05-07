@@ -98,9 +98,10 @@
 							## Problems w/ Grouped WC
 
 							- Creates intermediate `Seq`s in map values.
-							```scala
-							def groupBy[K](f: A ⇒ K): Map[K, Seq[A]]
-							```
+							  ```scala
+							  def groupBy[K](f: A ⇒ K): Map[K, Seq[A]]
+							  ```
+							  - Avoiding `groupByKey` is a [Spark best practice]((https://databricks.gitbooks.io/databricks-spark-knowledge-base/content/best_practices/prefer_reducebykey_over_groupbykey.html).
 							- [`groupBy`](http://www.scala-lang.org/api/current/scala/collection/GenTraversableLike.html#groupBy%5BK%5D%28f%3AA%3D%3EK%29%3Ascala.collection.GenMap%5BK%2CRepr%5D) defined in [`GenTraversableLike`](http://www.scala-lang.org/api/current/scala/collection/GenTraversableLike.html)
 							- <s>[`TraversableOnce`](http://www.scala-lang.org/api/current/scala/collection/TraversableOnce.html)</s> (*e.g.* <s>[`Iterator`](http://www.scala-lang.org/api/current/scala/collection/Iterator.html)</s>) &#x1f61e;
 							- Grouped WC requires two passes:
