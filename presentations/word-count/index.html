@@ -473,6 +473,31 @@
 					</section>
 					<section data-markdown>
 						<script type="text/template">
+							## Just to Show it Works
+
+							```scala
+							import scala.collection.parallel.immutable.ParVector
+
+							def time[A](a: => A) = {
+							  val t = System.nanoTime
+							  val r = a
+							  val t2 = System.nanoTime
+							  (r, (1.0e-9 * (t2 - t)).toFloat)
+							}
+
+							def cycle(m: Int, n: Int) =
+							  Iterator.iterate(0)(x => (x + 1) % m).take(n)
+							val n = math.pow(10, 7).toInt
+							val i = cycle(5, n)
+							val v = ParVector(cycle(5, n).toStream: _*)
+
+							val s = time(streamingWordCount(i)) // ~2.75s MBP MC373LL/A
+							val p = time(parallelWordCount(v))  // ~1.25s MBP MC373LL/A
+							```
+						</script>
+					</section>
+					<section data-markdown>
+						<script type="text/template">
 							## What Have We Done?
 						</script>
 					</section>
@@ -480,10 +505,10 @@
 						<script type="text/template">
 							## What Have We Shown?
 
-							- Learned a little abstract algebra.
+							- A little abstract algebra.
 							- Streaming and parallel versions of word count.
 							- Generalization giving implementations of `foldMap`.
-							- The heart of MapReduce.  "*The rest is just shuffling.*"
+							- The heart of MapReduce.  "*The rest is just shuffling.*" &#x1F609;
 						</script>
 					</section>
 				</section>
