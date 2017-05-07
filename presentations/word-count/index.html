@@ -514,7 +514,7 @@
 							    Vector.range(0, n, n / 4)
 							          .map(s => Future(streamingWordCount(cycle(5, n / 4, s))))
 							  )
-							  Await.result(fs, 5.seconds)
+							  Await.result(fs, 5.seconds)  // Don't block in prod!
 							}
 							```
 						</script>
@@ -532,6 +532,7 @@
 							- A little abstract algebra.
 							- Streaming and parallel versions of word count.
 							- Generalization giving implementations of `foldMap`.
+							- Futures have a monoid instance.  Can fold over futures.
 							- The heart of MapReduce.  "*The rest is just shuffling.*" &#x1F609;
 						</script>
 					</section>
