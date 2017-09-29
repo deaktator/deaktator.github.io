@@ -25,7 +25,7 @@ In the event that the items can be partitioned into two sets, we have a
 But what about more general, non-bipartite problems?  Let's start with the problem of finding the set of pairs that
 optimize the total additive value of the pairs when:
 
-1. Order in the pair matters, *i.e.* $$ (u, v) \neq (u, v) $$
+1. Order in the pair matters, *i.e.* $$ (u, v) \neq (v, u) $$
 1. Replication of items depends on whether the item occurs on the left or right of a pair.
 
 This is rather easy because it actually decomposes to bipartite graph problem.  We can create a bipartite graph
