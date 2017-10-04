@@ -1,0 +1,862 @@
+<!doctype html>
+<html lang="en">
+
+	<head>
+		<meta charset="utf-8">
+
+		<title>The Path to MonadError: null ⤳ Option ⤳ Either ⤳ MonadError</title>
+
+		<meta name="description" content="The Path to MonadError">
+		<meta name="author" content="Ryan Deak">
+
+		<meta name="apple-mobile-web-app-capable" content="yes">
+		<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, minimal-ui">
+
+		<link rel="stylesheet" href="../revealjs/css/reveal.css">
+		<!-- <link rel="stylesheet" href="../revealjs/css/theme/sky.css" id="theme"> -->
+		<link rel="stylesheet" href="../revealjs/css/theme/moon.css" id="theme">
+		<!-- Code syntax highlighting -->
+		<link rel="stylesheet" href="../highlightjs/css/github-gist.css">
+
+
+		<!-- Printing and PDF exports -->
+		<script>
+			var link = document.createElement( 'link' );
+			link.rel = 'stylesheet';
+			link.type = 'text/css';
+			link.href = window.location.search.match( /print-pdf/gi ) ? '../revealjs/css/print/pdf.css' : '../revealjs/css/print/paper.css';
+			document.getElementsByTagName( 'head' )[0].appendChild( link );
+		</script>
+
+		<!--[if lt IE 9]>
+		<script src="../revealjs/lib/js/html5shiv.js"></script>
+		<![endif]-->
+	</head>
+
+	<body>
+
+		<div class="reveal">
+
+			<!-- Any section element inside of this container is displayed as a slide -->
+			<div class="slides">
+				<section>
+					<h1>The Path to MonadError:</h1>
+					<h3>null ⤳&nbsp;Option ⤳&nbsp;Either ⤳&nbsp;MonadError</h3>
+					<p>
+						<small>
+							Ryan Deak
+							&middot; <a href="https://deaktator.github.io">deaktator.github.io</a>
+							&middot; <a href="https://twitter.com/deaktator">@deaktator</a>
+						</small>
+					</p>
+				</section>
+
+				<section data-markdown>
+					<script type="text/template">
+						## Outline
+						1. [`Null`](#/2)
+						1. [`Option`](#/3)
+						1. [`Either`](#/4)
+						1. [`MonadError`](#/5)
+					</script>
+				</section>
+
+				<section>
+				  <section data-markdown>
+					  <script type="text/template">
+						  # null
+					  </script>
+				  </section>
+
+					<section data-markdown>
+						<script type="text/template">
+							## null
+
+							Are we forever doomed to write code like this?
+
+							```java
+							import com.google.common.base.Function;
+
+							public class Len implements Function<String, Integer> {
+							  public Integer apply(final String s) {
+							    return null != s ?                    // Null check.  😢
+							      Integer.valueOf(s.length()) :
+							      (Integer) null;                     // Return null. 😢
+							  }
+							  // ...
+							}
+							```
+						</script>
+					</section>
+
+					<section data-markdown>
+						<script type="text/template">
+							## null
+
+							*Let's Google it!*&nbsp;
+							[`com.google.common.base.Function`](https://google.github.io/guava/releases/18.0/api/docs/com/google/common/base/Function.html#apply%28F%29)
+							<!-- .element: class="fragment" -->
+
+							```java
+							interface Function<F, T> {
+							  @Nullable T apply(@Nullable F input);
+							  // ...
+							}
+							```
+							<!-- .element: class="fragment" -->
+
+							### *Looks like it !* <!-- .element: class="fragment" -->
+
+						</script>
+					</section>
+
+					<section data-markdown>
+						<script type="text/template">
+							## null
+
+							- Function domain and codomain can be `null` ?!?
+							- [C.Y.A.](https://en.wikipedia.org/wiki/Cover_your_ass) move?
+								- **In my opinion**:
+									1. *Sort of*
+									1. *Not Google's fault*
+									1. *Pigeonholed into it*
+									1. *(Not asserting anything new)*
+						</script>
+					</section>
+
+					<section data-markdown>
+						<script type="text/template">
+							## null
+
+							Type variables (*in Java*) can be any **non-primitive**:
+							- any class type
+							- any interface type
+							- any array type
+							- or even another type variable
+
+							— [Oracle, Generic Types](http://docs.oracle.com/javase/tutorial/java/generics/types.html)
+
+						</script>
+					</section>
+
+					<section data-markdown>
+						<script type="text/template">
+							## null
+
+							```java
+							interface Fn<X, Y> {
+							  Y apply(X x);
+							}
+							```
+
+							*really means*
+							<!-- .element: class="fragment" -->
+
+							```java
+							interface Fn<X extends Object, Y extends Object> {
+							  Y apply(X x);
+							}
+							```
+							<!-- .element: class="fragment" -->
+
+							*and those `Object`s are **nullable**!* <!-- .element: class="fragment" -->
+
+						</script>
+					</section>
+
+					<section data-markdown>
+						<script type="text/template">
+							## null
+
+							### If you don't want **null**
+
+							- Which @NonNull Java annotation? ([Stack Overflow](https://stackoverflow.com/questions/35892063/which-nonnull-java-annotation-to-use))
+								- `javax.validation.constraints.NotNull` ?
+								- `javax.annotation.Nonnull` ?
+								- *jetbrains* ?
+								- *findbugs* ?
+								- *android* ?
+								- *Checker framework* ?
+						</script>
+					</section>
+
+					<section data-markdown>
+						<script type="text/template">
+							## null
+							### Dirty Little Secret
+
+							** "Optional Type Annotations are not a substitute for runtime validation"**
+
+							**"Your code should still perform runtime validation."**
+
+							[&mdash;Oracle Blog, 2014](https://blogs.oracle.com/java-platform-group/java-8s-new-type-annotations)
+						</script>
+					</section>
+
+					<section data-markdown>
+						<script type="text/template">
+							## null
+
+							![The Billion Dollar Mistake][billion]
+							[billion]: img/billion_dollar_mistake.jpg "The Billion Dollar Mistake"
+
+							<small>
+								[Wikipedia](https://en.wikipedia.org/wiki/Tony_Hoare#Apologies_and_retractions) &nbsp;/&nbsp;
+								[Video](https://www.infoq.com/presentations/Null-References-The-Billion-Dollar-Mistake-Tony-Hoare)
+							</small>
+						</script>
+					</section>
+				</section>
+
+				<section>
+					<section data-markdown>
+						<script type="text/template">
+							# Option
+						</script>
+					</section>
+
+					<section data-markdown>
+						<script type="text/template">
+							## Option
+
+							*"A heroine to the rescue"*
+
+							1. Banish `null` from your vocabulary.
+							1. Encode non-existence explicitly in the type.
+
+							`Option[+A]`
+						</script>
+					</section>
+
+					<section data-markdown>
+						<script type="text/template">
+							## Option
+
+							**Great for beginners** (*and everyone else*)
+
+							```scala
+							// Written without worrying about missing data.
+							def len(s: String) = s.length
+
+							val oStr: Option[String] = ???
+
+							// In maps / flatMaps
+							val oLen1 = oStr map len
+
+							// In for comprehensions
+							val oLen2 = for { s <- oStr } yield len(s)
+							```
+					  </script>
+						<aside class="notes">
+							You can see how this is addictive to beginners.
+							No more NPEs.
+							Write functions without worrying about missing data.
+						</aside>
+					</section>
+
+					<section data-markdown>
+						<script type="text/template">
+							## Option
+
+							*Until* ...
+
+							```scala
+							Some(null)                     // != None, != Option(null)
+
+							val o: Option[Int] = ???
+							o.get                          // Trade NPE for NSEE
+
+							val t: Try[Int] = ???
+							t.toOption                     // Throws away info
+
+							val e: Either[Exception, Int] = ???
+							e.right.toOption               // Throws away info
+							```
+						</script>
+						<aside class="notes">
+							NPEs replaced with NoSuchElementException.
+						</aside>
+					</section>
+
+					<section data-markdown>
+						<script type="text/template">
+							## Option
+
+							Eliminating `Option.get` is easy:
+							- `fold` *OR* `map` and `getOrElse`
+							- [catamorphism](https://en.wikipedia.org/wiki/Catamorphism)<sup><small>1</small></sup>
+							- *["Debut with a Catamorphism"](http://blog.tmorris.net/posts/debut-with-a-catamorphism/index.html)*
+
+							<small>1: See "Why doesn't `Option` have a fold method?" on [Stack Overflow](https://stackoverflow.com/a/5332657)</small>
+						</script>
+					</section>
+
+					<section data-markdown>
+						<script type="text/template">
+							## Option
+
+							**Problem 2**: &nbsp; `"heroine" dropRight 1`
+
+							<ul>
+								<li>`Option`s *are like a drug !*</li> <!-- .element: class="fragment" -->
+								<li>We love what they do for us:
+									<ul>
+										<li>No more null checks.</li>
+										<li>No more NPEs.</li>
+									</ul> <!-- .element: class="fragment" -->
+								</li> <!-- .element: class="fragment" -->
+								<li>Sometimes they are overused.</li> <!-- .element: class="fragment" -->
+							</ul>
+					  </script>
+					</section>
+
+					<section data-markdown>
+						<script type="text/template">
+							## Option
+
+							*Converting everything to* `Option`
+
+							*throws away information!*
+					  </script>
+				  </section>
+				</section>
+
+				<section>
+				  <section data-markdown>
+					  <script type="text/template">
+							# Either
+					  </script>
+				  </section>
+
+					<section data-markdown>
+					  <script type="text/template">
+							## Either
+
+							- `Either` has 2 type params, TC in `Monad` has 1.
+							- We fix the error type &amp; continue on our merry way.
+
+							```scala
+							sealed abstract class Either[+A, +B] extends Product with Serializable
+							```
+
+							```scala
+							trait Monad[F[_]] // ...
+							```
+
+							```scala
+							// Can produce a Monad for a given error type E.
+							trait EitherMonad[E, ?]   // ? via kind projector
+							```
+							<small>See [typelevel cats / cats.instances.either.catsStdInstancesForEither](https://github.com/typelevel/cats/blob/v0.9.0/core/src/main/scala/cats/instances/either.scala#L33-L46)</small>
+					  </script>
+				  </section>
+
+					<section data-markdown>
+					  <script type="text/template">
+							## Either
+
+							Beginners might not be able to *write*
+							[cats](https://typelevel.org/cats/), but *they get this*:
+
+							```scala
+							import cats.syntax.either.{catsSyntaxEither, catsSyntaxEitherId}
+
+							type Err = String
+							val ei = 2.asRight[Err]
+							val ef = 3f.asRight[Err]
+							val ed = 5d.asRight[Err]
+
+							// res: Either[Err,Double] = Right(10.0)
+							val res = for {
+							  i <- ei
+							  f <- ef
+							  d <- ed
+							} yield i + f + d
+							```
+					  </script>
+				  </section>
+
+					<section data-markdown>
+					  <script type="text/template">
+							## Either
+
+							*But then* ... <span>Mixed types 😱</span> <!-- .element: class="fragment" -->
+
+							```scala
+							import cats.syntax.either.{catsSyntaxEither, catsSyntaxEitherId}
+							import scala.util.Try
+
+							val esi = 2.asRight[String]
+							val tf  = Try(3f)
+							val eed = 5d.asRight[Exception]
+
+							val res = for {
+							  i <- esi
+							  f <- tf
+							  d <- eed
+							} yield i + f + d
+							```
+							<!-- .element: class="fragment" -->
+
+							```
+							error: type mismatch;
+							found   : scala.util.Try[Nothing]
+							required: Either[?,?]
+							```
+							<!-- .element: class="fragment" -->
+					  </script>
+				  </section>
+
+					<section data-markdown>
+					  <script type="text/template">
+							## Either
+
+							This is one of those *freak out* moments for people.
+
+							<span>**Easy fix**: *Convert errors to a common error type.*</span> <!-- .element: class="fragment" -->
+
+					  </script>
+				  </section>
+
+					<section data-markdown>
+					  <script type="text/template">
+							## Either
+
+							# Live Coding
+
+					  </script>
+				  </section>
+
+					<section data-markdown>
+					  <script type="text/template">
+							## Either
+
+							## *Ain't Nobody Got Time For That !*
+
+					  </script>
+				  </section>
+
+					<section data-markdown>
+					  <script type="text/template">
+							## Either
+
+							### Error ADT
+
+							```scala
+							sealed trait Err
+							object Err {
+							  implicit object ThrowableToErr extends ToErr[Throwable] {
+							    override def convertError(t: Throwable): Err = ExErr(t)
+							  }
+
+							  implicit object StrToErr extends ToErr[Err] {
+							    override def convertError(s: String): Err = StrErr(s)
+							  }
+							}
+
+							final case class StrErr(error: String) extends Err
+							final case class ExErr(ex: Throwable) extends Err
+							```
+					  </script>
+				  </section>
+
+
+					<section data-markdown>
+					  <script type="text/template">
+							## Either
+
+							```scala
+							type ErrOr[+A] = Either[Err, A]
+
+							sealed trait ToErr[E] {
+							  def convertError(e: E): Err
+							}
+
+							trait ValConv[F[_]] {
+							  def convert[A](fa: F[A]): ErrOr[A]
+							}
+
+							object ValConv {
+							  implicit def tryVC: ValConv[Try] = ???
+							  implicit def eitherVC[E: ToErr]: ValConv[Either[E, ?]] = ???
+							  // ...
+							}
+							```
+					  </script>
+				  </section>
+
+					<section data-markdown>
+					  <script type="text/template">
+							## Either
+
+							```scala
+							object Syntax {
+							  implicit class ErrSyntax[F[_], A](val fa: F[A]) extends AnyVal {
+							    def asErrOr(implicit c: ValConv[F]): ErrOr[A] = c.convert(fa)
+							  }
+							}
+							```
+					  </script>
+				  </section>
+
+					<section data-markdown>
+					  <script type="text/template">
+							## Either
+
+							```scala
+							import cats.syntax.either.{catsSyntaxEither, catsSyntaxEitherId}
+							import scala.util.Try
+							import Syntax._          // Our syntax.
+
+							val esi = 2.asRight[String]
+							val tf  = Try(3f)
+							val eed = 5d.asRight[Exception]
+
+							// res: ErrOr[Double] = Right(10.0)
+							val res = for {
+							  i <- esi.asErrOr    // Happy again
+							  f <- tf.asErrOr
+							  d <- eed.asErrOr
+							} yield i + f + d
+							```
+					  </script>
+				  </section>
+
+					<section data-markdown>
+					  <script type="text/template">
+							## Either
+
+							The Error ADT is hardcoded as the error type.
+
+							Let's generalize it.
+					  </script>
+				  </section>
+
+					<section data-markdown>
+					  <script type="text/template">
+							## Either
+
+							Same ADT. &nbsp; `ErrConv` changes.
+
+							```scala
+							sealed trait Err
+							object Err {
+							  implicit object ExToErr extends ErrConv[Throwable, Err] {
+							    override def convertError(t: Throwable): Err = ExErr(t)
+							  }
+
+							  implicit object StrToErr extends ErrConv[String, Err] {
+							    override def convertError(s: String): Err = StrErr(s)
+							  }
+							}
+
+							final case class StrErr(error: String) extends Err
+							final case class ExErr(ex: Exception) extends Err
+
+							```
+					  </script>
+				  </section>
+
+					<section data-markdown>
+					  <script type="text/template">
+							## Either
+
+							```scala
+							trait ErrConv[E, I] {
+							  def convertError(e: E): I
+							}
+
+							sealed trait ValConv[F[_], I] {
+							  def convert[A](fa: F[A]): Either[I, A]
+							}
+
+							object ValConv {
+							  implicit def try_[I](implicit ec: ErrConv[Throwable, I]):
+							    ValConv[Try, I] = ???
+
+							  implicit def either[E, I](implicit ec: ErrConv[E, I]):
+							    ValConv[Either[E, ?], I] = ???
+
+							  // ...
+							}
+							```
+					  </script>
+				  </section>
+
+					<section data-markdown>
+					  <script type="text/template">
+							## Either
+
+							```scala
+							object Syntax {
+							  implicit class ErrSyntax[F[_], A](val fa: F[A]) extends AnyVal {
+							    def errorTo[I](implicit c: ValConv[F, I]): Either[I, A] =
+							      c.convert(fa)
+							  }
+							}
+							```
+					  </script>
+				  </section>
+
+					<section data-markdown>
+					  <script type="text/template">
+							## Either
+
+							```scala
+							import cats.syntax.either.{catsSyntaxEither, catsSyntaxEitherId}
+							import scala.util.Try
+							import Syntax._          // Our syntax.
+
+							val esi = 2.asRight[String]
+							val tf  = Try(3f)
+							val eed = 5d.asRight[Exception]
+
+							// res: Either[Err, Double] = Right(10.0)
+							val res = for {
+							  i <- esi.errorTo[Err]
+							  f <- tf.errorTo[Err]
+							  d <- eed.errorTo[Err]
+							} yield i + f + d
+							```
+					  </script>
+				  </section>
+
+					<section data-markdown>
+						<script type="text/template">
+							## Either
+
+							Can we do even better?
+						</script>
+					</section>
+
+				</section>
+
+				<section>
+					<section data-markdown>
+						<script type="text/template">
+							# MonadError
+						</script>
+					</section>
+
+					<section data-markdown>
+					  <script type="text/template">
+							## MonadError
+
+							```scala
+							trait ValConv[F[_], G[_]] {
+							  def convert[A](fa: F[A]): G[A]  // F ~> G
+							}
+
+							object ValConv {
+							  implicit def try_[F[_], I](implicit
+							      me: MonadError[F, I],
+							      ec: ErrConv[Throwable, I]
+							  ): ValConv[Try, F] = ???
+
+							  implicit def either[F[_], E, I](implicit
+							      me: MonadError[F, I],
+							      ec: ErrConv[E, I]
+							  ): ValConv[Either[E, ?], F] = ???
+
+							  // ...
+							}
+							```
+						</script>
+					</section>
+
+					<section data-markdown>
+					  <script type="text/template">
+							## MonadError
+
+							```scala
+							implicit class ErrSyntax[F[_], A](val fa: F[A]) {
+							  def convertTo[G[_]](implicit vc: ValConv[F, G]): G[A] =
+							    vc.convert(fa)
+							}
+							```
+						</script>
+					</section>
+
+					<section data-markdown>
+						<script type="text/template">
+							## MonadError
+
+							```scala
+							// Unparametrized
+							   implicit class ErrSyntax[F[_], A](val fa: F[A]) extends AnyVal {
+							     def asErrOr        (implicit vc: ValConv[F   ]): ErrOr[A] =
+							       vc.convert(fa)
+							   }
+							```
+
+							```scala
+							// Either parametrized by error type
+							   implicit class ErrSyntax[F[_], A](val fa: F[A]) extends AnyVal {
+							     def errorTo  [I   ](implicit vc: ValConv[F, I]): Either[I, A] =
+							       vc.convert(fa)
+							   }
+							```
+
+							```scala
+							// Parametrized by a type constructor
+							   implicit class ErrSyntax[F[_], A](val fa: F[A]) extends AnyVal {
+							     def convertTo[G[_]](implicit vc: ValConv[F, G]): G[A] =
+							       vc.convert(fa)
+							   }
+							```
+					  </script>
+				  </section>
+
+					<section data-markdown>
+						<script type="text/template">
+							## MonadError
+
+							```scala
+							// Unparametrized
+							// implicit class ErrSyntax[F[_], A](val fa: F[A]) extends AnyVal {
+							     def asErrOr        (implicit vc: ValConv[F   ]): ErrOr[A] =
+							//     vc.convert(fa)
+							// }
+							```
+
+							```scala
+							// Either parametrized by error type
+							// implicit class ErrSyntax[F[_], A](val fa: F[A]) extends AnyVal {
+							     def errorTo  [I   ](implicit vc: ValConv[F, I]): Either[I, A] =
+							//     vc.convert(fa)
+							// }
+							```
+
+							```scala
+							// Parametrized by a type constructor
+							// implicit class ErrSyntax[F[_], A](val fa: F[A]) extends AnyVal {
+							     def convertTo[G[_]](implicit vc: ValConv[F, G]): G[A] =
+							//     vc.convert(fa)
+							// }
+							```
+					  </script>
+				  </section>
+
+					<section data-markdown>
+						<script type="text/template">
+							## MonadError
+
+							### Value Converters
+
+							```scala
+							class VC0           { def convert[A](fa: F[A]): Either[(), A]  }
+							```
+							<!-- .element: class="fragment" -->
+
+							```scala
+							class VC0           { def convert[A](fa: F[A]): Option[A]      }
+							```
+							<!-- .element: class="fragment" -->
+
+							```scala
+							trait VC1[F[_]     ]{ def convert[A](fa: F[A]): Either[Err, A] }
+							trait VC2[F[_],I   ]{ def convert[A](fa: F[A]): Either[I, A]   }
+							trait VC3[F[_],G[_]]{ def convert[A](fa: F[A]): G[A]           }
+							```
+						</script>
+					</section>
+
+					<section data-markdown>
+						<script type="text/template">
+							## MonadError
+
+							### Syntax
+
+							```scala
+							def noErrorInfo    (implicit vc: ValConv[F   ]): Either[(), A]
+							```
+							<!-- .element: class="fragment" -->
+
+							```scala
+							def noErrorInfo    (implicit vc: ValConv[F   ]): Option[A]
+							```
+							<!-- .element: class="fragment" -->
+
+							```scala
+							def asErrOr        (implicit vc: ValConv[F   ]): Either[Err, A]
+							def errorTo  [I   ](implicit vc: ValConv[F, I]): Either[I, A]
+							def convertTo[G[_]](implicit vc: ValConv[F, G]): G[A]
+							```
+						</script>
+					</section>
+
+					<section data-markdown>
+						<script type="text/template">
+							## What have we been doing?
+					  </script>
+				  </section>
+				</section>
+
+				<section data-markdown>
+					<script type="text/template">
+						# Catamorphism
+					</script>
+				</section>
+
+
+				<!-- ========================================================================== -->
+				<!--                         End of                                                    -->
+				<!-- ========================================================================== -->
+
+				<section data-markdown>
+					<script type="text/template">
+						# Questions?
+					</script>
+				</section>
+
+				<section data-markdown>
+					<script type="text/template">
+						# Thank You
+
+						### Ryan Deak / [@deaktator](http://twitter.com/deaktator)
+
+						[deaktator.github.io/presentations/monaderror](https://deaktator.github.io/presentations/monaderror)
+					</script>
+				</section>
+
+			</div> <!-- slides -->
+		</div>
+
+		<script src="../revealjs/lib/js/head.min.js"></script>
+		<script src="../revealjs/js/reveal.js"></script>
+
+		<script>
+
+			// Full list of configuration options available at:
+			// https://github.com/hakimel/reveal.js#configuration
+			Reveal.initialize({
+				controls: true,
+				progress: true,
+				history: true,
+				center: true,
+				slideNumber: true,
+
+				transition: 'fade', // none/fade/slide/convex/concave/zoom
+
+				math: {
+					mathjax: 'https://cdn.mathjax.org/mathjax/latest/MathJax.js',
+					config: 'TeX-AMS_HTML-full'
+				},
+
+				// Optional reveal.js plugins
+				dependencies: [
+					{ src: '../revealjs/lib/js/classList.js', condition: function() { return !document.body.classList; } },
+					{ src: '../revealjs/plugin/markdown/marked.js', condition: function() { return !!document.querySelector( '[data-markdown]' ); } },
+					{ src: '../revealjs/plugin/markdown/markdown.js', condition: function() { return !!document.querySelector( '[data-markdown]' ); } },
+					{ src: '../revealjs/plugin/highlight/highlight.js', async: true, callback: function() { hljs.initHighlightingOnLoad(); } },
+// 					{ src: '../revealjs/plugin/zoom-js/zoom.js', async: true },
+					{ src: '../revealjs/plugin/notes/notes.js', async: true },
+					{ src: '../revealjs/plugin/math/math.js', async: true }
+				]
+			});
+
+		</script>
+	</body>
+</html>
