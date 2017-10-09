@@ -101,5 +101,5 @@ public static String pad(String s) {
 
 {% highlight scala %}
 // SCALA
-def pad(s: String) = """(^|\s)""" + s """(?=\s|$)"""
+def pad(s: String) = """(^|\s)""" + s + """(?=\s|$)"""
 {% endhighlight %}
