@@ -5,7 +5,7 @@ date:   2017-10-09 16:51:00
 categories: programming java scala
 ---
 
-I was recently working on (Aloha](https://github.com/eharmony/aloha)'s support for multilabel models and
+I was recently working on [Aloha](https://github.com/eharmony/aloha)'s support for multilabel models and
 I came across a regular expression issue that was confounding.  I want to quickly share the problem and
 an easy solution.
 
@@ -95,7 +95,7 @@ So, in summary, consider whitespace padding your regular expressions with:
 {% highlight java %}
 // JAVA
 public static String pad(String s) {
-  return "(^|\\s)" + s "(?=\\s|$)";
+  return "(^|\\s)" + s + "(?=\\s|$)";
 }
 {% endhighlight %}
 
