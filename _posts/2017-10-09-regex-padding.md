@@ -11,9 +11,10 @@ an easy solution.
 
 ## Problem
 
-When trying to find regular expression matches of something delimited by whitespace, it's not appropriate to
-simply look for the pattern and just surround the pattern by whitespace.  For instance, consider the following
-example:
+When trying to find regular expression matches of something delimited by whitespace, it's not sufficient to
+simply add surrounding whitespace to a
+[Pattern](https://docs.oracle.com/javase/7/docs/api/java/util/regex/Pattern.html).  For instance, consider
+the following example:
 
 {% highlight java linenos %}
 import java.util.regex.Matcher;
@@ -29,21 +30,20 @@ m1.find();        // false
 {% endhighlight %}
 
 Notice that, at first glance, the regular expression in `re1` seems reasonable.  It seems like it should be
-able to find both of values in the first capture group: `"ab"` and `"cd"`.  But it fails to find the second
-value.  This is because the trailing space in the match `" -qab "`, the trailing space is consumed by the
-first match and is not available to be used to delimit the second match.  This is because the search for
+able to find the values in the first capture groups: `"ab"` and `"cd"`.  But it fails to find the second
+value.  This is because of the trailing space in the match `" -qab "`.  The trailing space is consumed by
+the first match and is not available to delimit the second match.  This is because the search for
 the second match starts at the index *after* the end of the first match.
 
 
 ## Easy Solution
 
-The solution involves consuming the delimiting whitespace on just one end of the
-[Pattern](https://docs.oracle.com/javase/7/docs/api/java/util/regex/Pattern.html).  In the following
+The solution involves consuming the delimiting whitespace on just one end of the pattern.  In the following
 example, an arbitrary decision was made to consume the whitespace at the beginning of the pattern.  To do
 this, simply use the *zero-width positive lookahead* feature.  This is the `(?=\s|$)` at the end of
 pattern, `re2`.  This says "*the next character, if one exists, must be whitespace (but don't consume it)*."
-At the beginning of the pattern, we see `(^|\s)` which says "*if a character is present, it must be
-whitespace (and DO consume it)*."
+At the beginning of the pattern, `(^|\s)` says "*if a character is present, it must be whitespace
+(and DO consume it)*."
 
 {% highlight java linenos %}
 import java.util.regex.Matcher;
@@ -60,8 +60,8 @@ m2.group(2);      // "cd"
 {% endhighlight %}
 
 An additional capture group in front of the main pattern is added to consume the whitespace character, so
-the group containing the information is group `2`, but this is the only thing necessary to change.  Notice
-the second match is found this time.  Also notice that `subject2` isn't whitespace-padded since the the
+the group containing the relevant information is group `2`, but this is the only thing necessary to change.
+Notice the second match is found this time.  Also notice that `subject2` isn't whitespace-padded since the
 regular expression takes care of the edge cases.
 
 ## Scala Too
@@ -85,6 +85,17 @@ val subject2 = "-qab -q cd"
 
 // List("ab", "cd")
 val matches2 = re2.findAllMatchIn(subject2).map(_.group(2)).toList
+{% endhighlight %}
+
+## Deleting the Matches
+
+The matches can also safely be deleted without replacing with whitespace.  For instance:
+
+{% highlight scala linenos %}
+val re2 = """(^|\s)-q\s*(\S{2})(?=\s|$)""".r
+val subject2 = "-qab -q cd"
+val res = re2.replaceAllIn(subject2, "")
+assert( res == "" )
 {% endhighlight %}
 
 
