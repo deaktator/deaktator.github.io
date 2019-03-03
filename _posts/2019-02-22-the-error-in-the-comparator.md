@@ -85,23 +85,43 @@ incorporates importance weights in training but not validation during cross vali
 distribution different than the one used to measure their efficacy.  This is a manifestation of  the same problem we
 sought to solve through importance weighting in the first place.  *See the rub?*  What is most impactful is that this
 problem appears inside the code that helps to sort (or rank) models in relation to their efficacy.
-
-
-## Cross Validation
+$$
+\DeclareMathOperator*{\argmin}{\arg\!\min}
+$$
+## Cross Validation-based Parameter Optimization
 
 Assume we have a training set $$ \mathcal{T} = {\{ \left( x_{i}, y_{i} \right) \}}_{i=1}^{n} $$ of size $$ n $$, 
 split into $$ k $$ disjoint non-empty subsets, $$ {\{ \mathcal{T}_{i} \}}_{i=1}^{k} $$.  Given  parameters
 $$ \theta \in \Theta $$, let $$ { \widehat { f }  }_{ \theta, { \mathcal{T}  }_{ j } } $$ be a function
-learned on training data $$ {\{ \mathcal{T}_{i} \}}_{i \ne j} $$ and validated on test data
+learned on training data $$ {\{ \mathcal{T}_{i} \}}_{i \ne j} $$ to be validated on test fold,
 $$ { \mathcal{T}  }_{ j } $$. Then, given a  [loss function](https://en.wikipedia.org/wiki/Loss_function),
-$$ \ell $$, we can formally define cross validation-based parameter optimization as: 
+$$ \ell $$, we can formally define $$ k $$-fold cross validation-based parameter optimization as: 
 
 $$
-\DeclareMathOperator*{\argmin}{\arg\!\min}
-\widehat{\theta} = \argmin_{\theta \in \Theta} \frac { 1 }{ k } \sum _{ j=1 }^{ k }{ \frac { 1 }{ \left| { \mathcal{T}  }_{ j } \right|  } \sum _{ \left( x, y \right) \in { \mathcal{T}  }_{ j } }{ \ell \left( x, y, { \widehat { f }  }_{ \theta, { \mathcal{T}  }_{ j } }\left( x \right)  \right)  }  }
+\widehat{\theta} = \argmin_{\theta \in \Theta} \frac { 1 }{ k } \sum _{ j=1 }^{ k }{ \frac { 1 }{ \left| { \mathcal{T} }_{ j } \right| } \sum _{ \left( x, y \right) \in { \mathcal{T}  }_{ j } }{ \ell \left( x, y, { \widehat { f }  }_{ \theta, { \mathcal{T}  }_{ j } }\left( x \right)  \right)  }  } \label{eq1}\tag{1}
 $$
 
-This is very similar to the definition found in **[\[1\]](#ref1)**).
+This is very similar to the definition in **[\[1\]](#ref1)** with the addition, here, of the $$ \argmin $$ over the
+parameters, $$ \theta $$.  The inner summation (and normalizing constant) describes the average loss *within
+a test fold* and the outer summation describes averaging *over the test folds*.  Notice, that the average loss within
+a test fold is on the same scale as the loss of a tuple, $$ \left( x, y \right) $$.
+
+## Scikit-learn
+
+Scikit-learn has
+[many cross validation routines](https://scikit-learn.org/stable/modules/classes.html#splitter-functions) like
+[GridSearchCV](https://scikit-learn.org/stable/modules/generated/sklearn.model_selection.GridSearchCV.html) and
+[RandomizedSearchCV](https://scikit-learn.org/stable/modules/generated/sklearn.model_selection.RandomizedSearchCV.html)
+that admit a [scoring](https://scikit-learn.org/stable/modules/model_evaluation.html#scoring-parameter) function.
+The *["Implementing your own scoring object"](https://scikit-learn.org/stable/modules/model_evaluation.html#implementing-your-own-scoring-object)*
+section of the scikit-learn documentation describes the structure of a scoring function as a function with arguments
+`(estimator, X, y)` that returns a floating point number.  We can think of this as a function $$ s $$ that replaces
+
+$$
+{ \frac { 1 }{ \left| { \mathcal{T} }_{ j } \right| } \sum _{ \left( x, y \right) \in { \mathcal{T} }_{ j } }{ \ell \left( x, y, { \widehat { f }  }_{ \theta, { \mathcal{T}  }_{ j } }\left( x \right)  \right)  }  }  \label{eq2}\tag{2}
+$$
+
+in equation $$ \left( \ref{eq1} \right) $$.  $$ s $$ is in fact more general because .
 
 ## Other
 
