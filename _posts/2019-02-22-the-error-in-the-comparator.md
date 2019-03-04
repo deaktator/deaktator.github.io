@@ -9,7 +9,7 @@ categories: stats probability machine-learning python
 
 *If the title doesn't immediately give you chills, it should.  Allow me to explain.*
 
-It will help to devise an artificial motivating example to illustrate the point before diving into the particular
+It will help to devise a motivating toy example to illustrate the point before diving into the particular
 manifestation of this problem that gave me chills when I first discovered it.
 
 Defining what is meant by *comparator* is important.  By
@@ -27,7 +27,7 @@ What happens if there's a bug in this comparison function?  Since its implementa
 utilizing it, the correctness of the comparison function is independent of the algorithms (like *sort*, *min*
 and *max*) utilizing it.  Even though the *sort*, *min* or *max* algorithms may be correct, using a buggy comparison
 function may give wildly undesirable and inaccurate results.  This should not be surprising, but it should be noted 
-nonetheless.  Here's a motivating toy example.
+nonetheless.  Here's the motivating toy example.
 
 Comparing [floating point](https://en.wikipedia.org/wiki/IEEE_754) representations of
 [real](https://en.wikipedia.org/wiki/Real_number) values is [isomorphic](http://mathworld.wolfram.com/Isomorphic.html)
@@ -48,15 +48,20 @@ rather large: [9.999999998 × 10<sup>9</sup>](https://www.wolframalpha.com/input
 With the basics out of the way, it's time to bring the real problem to center stage.  While attempting to use
 importance weighting in a particular problem setting, I noticed that the metrics reported in
 [scikit-learn](https://scikit-learn.org/stable/index.html)'s
-[cross validation](https://en.wikipedia.org/wiki/Cross-validation_(statistics)) routine seemed odd.  So I
-[beared down](https://en.wikipedia.org/wiki/Bear_Down) and dug into the issue and slowly started realizing that while
-[importance weighting](https://en.wikipedia.org/wiki/Importance_sampling) has been available in the metric calculations
-themselves since 2014 ([PR 3098](https://github.com/scikit-learn/scikit-learn/pull/3098) and
+[cross validation](https://en.wikipedia.org/wiki/Cross-validation_(statistics)) routine seemed odd.  So I dug into the
+issue and slowly started realizing that while [importance weighting](https://en.wikipedia.org/wiki/Importance_sampling)
+has been available in the metric calculations themselves since 2014
+([PR 3098](https://github.com/scikit-learn/scikit-learn/pull/3098) and
 [PR 3401](https://github.com/scikit-learn/scikit-learn/pull/3401)), the `sample_weight` parameter in the metrics isn't
 being populated from the cross validation routines (see 
 [_validation.py](https://github.com/scikit-learn/scikit-learn/blob/0.20.2/sklearn/model_selection/_validation.py) and
-[_search.py](https://github.com/scikit-learn/scikit-learn/blob/0.20.2/sklearn/model_selection/_search.py)).  Once I
-discovered this, I confirmed that `sample_weight` is properly propagated during model training.  The takeaway is this:
+[_search.py](https://github.com/scikit-learn/scikit-learn/blob/0.20.2/sklearn/model_selection/_search.py)).
+Consequently, hyper-parameter optimization
+[routines](https://scikit-learn.org/stable/modules/classes.html#hyper-parameter-optimizers)
+like [GridSearchCV](https://scikit-learn.org/stable/modules/generated/sklearn.model_selection.GridSearchCV.html) and
+[RandomizedSearchCV](https://scikit-learn.org/stable/modules/generated/sklearn.model_selection.RandomizedSearchCV.html)
+are also affected.  Once I discovered this, I confirmed that `sample_weight` is properly propagated during model
+training.  The takeaway is this:
 
 > *During cross validation in scikit-learn, importance weighting is used in model training but not validation.*
 
@@ -67,9 +72,10 @@ tells us:
 while only having samples generated from a different distribution than the distribution of interest."*
 —[https://en.wikipedia.org/wiki/Importance_sampling](https://en.wikipedia.org/wiki/Importance_sampling)
 
-It is typical that during the (training) data generation phase of a modeling process, the sample distribution is not
-representative of the test distribution.  By test distribution, I mean the distribution on which the model will perform
-predictions. This is what is meant by [sampling bias](https://en.wikipedia.org/wiki/Sampling_bias):
+It is typical that during the (training) data generation phase of a modeling process, the sample distribution used in
+training is not representative of the population to which a learned model will be applied.  This is a form of 
+[sampling bias](https://en.wikipedia.org/wiki/Sampling_bias) that can have a detrimental effect when assessing model
+quality:
 
 > *"In statistics, sampling bias is a bias in which a sample is collected in such a way that some members of the
 intended population are less likely to be included than others. It results in a biased sample, a non-random sample
@@ -78,33 +84,147 @@ selected.  If this is not accounted for, results can be erroneously attributed t
 than to the method of sampling."
 —[https://en.wikipedia.org/wiki/Sampling_bias](https://en.wikipedia.org/wiki/Sampling_bias)*
 
-We can start to see the problem take shape.  When trying to address statistical issues like sampling bias, we use
-importance weighting to unwind these biases introduced in the sampling process.  This is predicated on the idea that
-importance weighting is consistently applied during training *and validation*.  The fact that scikit-learn
+We can start to see the problem take shape.  When trying to address statistical issues like sampling bias,
+importance weighting can be used to unwind these biases introduced in the sampling process.  This is predicated on the
+idea that importance weighting is consistently applied during training *and validation*.  The fact that scikit-learn
 incorporates importance weights in training but not validation during cross validation means that models learn a
 distribution different than the one used to measure their efficacy.  This is a manifestation of  the same problem we
 sought to solve through importance weighting in the first place.  *See the rub?*  What is most impactful is that this
 problem appears inside the code that helps to sort (or rank) models in relation to their efficacy.
 $$
+\newcommand{\vect}[1]{\boldsymbol{#1}}
 \DeclareMathOperator*{\argmin}{\arg\!\min}
 $$
-## Cross Validation-based Parameter Optimization
+## Cross Validation
 
 Assume we have a training set $$ \mathcal{T} = {\{ \left( x_{i}, y_{i} \right) \}}_{i=1}^{n} $$ of size $$ n $$, 
 split into $$ k $$ disjoint non-empty subsets, $$ {\{ \mathcal{T}_{i} \}}_{i=1}^{k} $$.  Given  parameters
 $$ \theta \in \Theta $$, let $$ { \widehat { f }  }_{ \theta, { \mathcal{T}  }_{ j } } $$ be a function
-learned on training data $$ {\{ \mathcal{T}_{i} \}}_{i \ne j} $$ to be validated on test fold,
+trained on $$ {\{ \mathcal{T}_{i} \}}_{i \ne j} $$ and validated on test fold,
 $$ { \mathcal{T}  }_{ j } $$. Then, given a  [loss function](https://en.wikipedia.org/wiki/Loss_function),
-$$ \ell $$, we can formally define $$ k $$-fold cross validation-based parameter optimization as: 
+$$ \ell $$, we can formally define $$ k $$-fold cross validation as: 
 
 $$
-\widehat{\theta} = \argmin_{\theta \in \Theta} \frac { 1 }{ k } \sum _{ j=1 }^{ k }{ \frac { 1 }{ \left| { \mathcal{T} }_{ j } \right| } \sum _{ \left( x, y \right) \in { \mathcal{T}  }_{ j } }{ \ell \left( x, y, { \widehat { f }  }_{ \theta, { \mathcal{T}  }_{ j } }\left( x \right)  \right)  }  } \label{eq1}\tag{1}
+\frac { 1 }{ k } \sum _{ j=1 }^{ k }{ \frac { 1 }{ \left| { \mathcal{T} }_{ j } \right| } \sum _{ \left( x, y \right) \in { \mathcal{T}  }_{ j } }{ \ell \left( x, y, { \widehat { f }  }_{ \theta, { \mathcal{T}  }_{ j } }\left( x \right)  \right)  }  } \label{eq1}\tag{1}
 $$
 
-This is very similar to the definition in **[\[1\]](#ref1)** with the addition, here, of the $$ \argmin $$ over the
-parameters, $$ \theta $$.  The inner summation (and normalizing constant) describes the average loss *within
-a test fold* and the outer summation describes averaging *over the test folds*.  Notice, that the average loss within
-a test fold is on the same scale as the loss of a tuple, $$ \left( x, y \right) $$.
+This is very similar to the definition found in **[\[1\]](#ref1)** with the addition of the parameters, $$ \theta $$.
+The inner summation (and normalizing constant) describes the average loss *within a test fold* and the outer summation
+describes averaging *over the test folds*.  Notice that the average loss within a test fold is bounded by the minimum
+and maximum loss of any $$ \left( x, y \right) \in \mathcal{T}_{ j } $$.  Notice additionally that with this
+formulation, the average loss of each test fold has the same contribution in the outer summation, regardless of fold
+size.
+
+
+## Abstracting Cross Validation 
+ 
+We can abstract equation $$ \left( \ref{eq1} \right) $$ by replacing the *within*-fold average loss with a more general
+scoring function
+$$ s \left( { \widehat { f }  }_{ \theta, { \mathcal{T}  }_{ j } }, \vect{x}_{\mathcal{T}_{ j }}, \vect{y}_{\mathcal{T}_{ j }}  \right) \in \mathbb{R}$$,
+where $$ \vect{x}_{\mathcal{T}_{ j }} $$ and $$ \vect{y}_{\mathcal{T}_{ j }} $$ are vectors of $$ x $$ and $$ y $$
+values in $$ \mathcal{T}_{ j } $$, respectively.  Assume that the magnitude of $$ s $$ is invariant to
+$$ \left| { \mathcal{T} }_{ j } \right| $$.  This assumption is analogous to property in
+equation $$ \left( \ref{eq1} \right) $$ that the *within*-fold average loss is bounded by the minimum and maximum loss
+of any $$ \left( x, y \right) \in \mathcal{T}_{ j } $$, and is a generalization of the *within*-fold averaging.
+With these constraints, equation $$ \left( \ref{eq1} \right) $$ can then be rewritten as:
+
+$$
+\frac { 1 }{ k } \sum _{ j=1 }^{ k }{ s \left( { \widehat { f }  }_{ \theta, { \mathcal{T}  }_{ j } }, \vect{x}_{\mathcal{T}_{ j }}, \vect{y}_{\mathcal{T}_{ j }}  \right) } \label{eq2}\tag{2}
+$$
+
+If we loosen the constraint that each test fold $$ j $$ contributes equally to the global average
+(i.e., $$ \forall{j} \in \left\{ 1, \ldots, k \right\}, w_{j} = \frac{1}{k} $$), thereby making the outer summation a
+weighted average, then equation $$ \left( \ref{eq2} \right) $$ can be rewritten as:
+
+$$
+\frac{ \sum _{ j=1 }^{ k }{ w_{j} s \left( { \widehat { f }  }_{ \theta, { \mathcal{T}  }_{ j } }, \vect{x}_{\mathcal{T}_{ j }}, \vect{y}_{\mathcal{T}_{ j }}  \right) } }{ \sum _{ j=1 }^{ k }{ w_{j} } } \label{eq3}\tag{3}
+$$
+
+
+## Introducing Importance Weights
+
+To introduce importance weights into cross validation, $$ \mathcal{T}_{ j } $$ can be extended to include an importance
+weight vector, $$ \vect{w}_{\mathcal{T}_{ j }} $$, with the same indices in $$ \vect{x}_{\mathcal{T}_{ j }} $$ and
+$$ \vect{y}_{\mathcal{T}_{ j }} $$ and the scoring function, $$ s $$, is extended to accept the importance weights, 
+$$ s \left( { \widehat { f }  }_{ \theta, { \mathcal{T} }_{ j } }, \vect{x}_{\mathcal{T}_{ j }}, \vect{y}_{\mathcal{T}_{ j }}, \vect{w}_{\mathcal{T}_{ j }} \right) $$.
+Then equation $$ \left( \ref{eq3} \right) $$ becomes:
+
+$$
+\frac{ \sum _{ j=1 }^{ k }{ w_{j} s \left( { \widehat { f }  }_{ \theta, { \mathcal{T}  }_{ j } }, \vect{x}_{\mathcal{T}_{ j }}, \vect{y}_{\mathcal{T}_{ j }}, \vect{w}_{\mathcal{T}_{ j }}  \right) } }{ \sum _{ j=1 }^{ k }{ w_{j} } } \label{eq4}\tag{4}
+$$
+
+If we let $$ w_{j} = \left \lVert { \vect{w}_{\mathcal{T}_{ j } } } \right \rVert _{L_{1}} $$, then
+$$ \left( \ref{eq4} \right) $$ can be rewritten as:
+
+$$
+\frac{ \sum _{ j=1 }^{ k }{ \left \lVert { \vect{w}_{\mathcal{T}_{ j } } } \right \rVert _{L_{1}} s \left( { \widehat { f }  }_{ \theta, { \mathcal{T}  }_{ j } }, \vect{x}_{\mathcal{T}_{ j }}, \vect{y}_{\mathcal{T}_{ j }}, \vect{w}_{\mathcal{T}_{ j }}  \right) } }{ \sum _{ j=1 }^{ k }{ \left \lVert { \vect{w}_{\mathcal{T}_{ j } } } \right \rVert _{L_{1}} } } \label{eq5}\tag{5}
+$$
+
+When I explained this to one of my colleagues, he was uneasy about the use of $$ \vect{w}_{\mathcal{T}_{ j } } $$ both
+inside $$ s $$ and in the mixing weight $$ w_{j} $$.  Looking at $$ \left( \ref{eq5} \right) $$, his concern made sense
+to me.  I realized that if $$ \vect{w}_{\mathcal{T}_{ j } } $$ was normalized (by the $$ L_{1} $$ norm), and it did not
+affect the results, then $$ \left \lVert { \vect{w}_{\mathcal{T}_{ j } } } \right \rVert _{L_{1}} $$ would only be taken
+into account once in the importance weighted cross validation estimate.  So I considered whether this was currently the
+case in scikit-learn and realized that all scoring functions that accept importance weights are invariant to
+$$ \left \lVert { \vect{w}_{\mathcal{T}_{ j } } } \right \rVert _{L_{1}} $$.  This can be seen in the
+[interactive proof](https://en.wikipedia.org/wiki/Interactive_proof_system) that I wrote with
+[hypothesis](https://hypothesis.readthedocs.io/en/latest/).  The proof can be found at 
+[https://gist.github.com/deaktator/94545f807f139eba2c8a15381f2495e0](https://gist.github.com/deaktator/94545f807f139eba2c8a15381f2495e0).
+After verifying this scale invariance in the scoring functions in scikit-learn that accept importance weights, I
+concluded that the final cross validation equation should be:
+
+$$
+\frac{ \sum _{ j=1 }^{ k }{ \left \lVert { \vect{w}_{\mathcal{T}_{ j } } } \right \rVert _{L_{1}} s \left( { \widehat { f }  }_{ \theta, { \mathcal{T}  }_{ j } }, \vect{x}_{\mathcal{T}_{ j }}, \vect{y}_{\mathcal{T}_{ j }}, \frac{ \vect{w}_{\mathcal{T}_{ j }} }{\left \lVert { \vect{w}_{\mathcal{T}_{ j } } } \right \rVert _{L_{1}}}  \right) } }{ \sum _{ j=1 }^{ k }{ \left \lVert { \vect{w}_{\mathcal{T}_{ j } } } \right \rVert _{L_{1}} } } \label{eq6}\tag{6}
+$$
+
+
+## Some Examples
+
+To verify the behavior of importance weighted cross validation, I devised the following unit test.
+
+<!-- Unit test showing the effect of importance weighting in sklearn. -->
+<script src="https://gist.github.com/deaktator/cd73dac7fea829a2e357deeb011a1ac1.js"></script>
+
+Desired               || scikit-learn ||metric        || sample_weight                     
+--------------------- | ------------- | ------------- | ----------------------------------
+0.999999              |  0.5          | *accuracy*    | \[**1**, 999999, **1**, 999999\]          
+0.66666666            |  0.5          | *accuracy*    | \[**100000**, 200000, **100000**, 200000\]
+0.5                   |  *0.5*        | *accuracy*    | \[**100000**, 100000, **100000**, 100000\]
+0.66666666            |  0.5          | *accuracy*    | \[**200000**, 100000, **200000**, 100000\]
+0.999999              |  0.5          | *accuracy*    | \[**999999**, 1, **999999**, 1\]
+0.25000025            |  0.5          | *accuracy*    | \[**2000000**, 1000000, **1**, 999999\]
+2.5 x 10<sup>-7</sup> |  0.25         | *precision*   | \[**2000000**, 1000000, **1**, 999999\]
+-0.5389724            | -0.8695388    | *log loss*    | \[**2500000**, 500000, **200000**, 100000\]
+-0.1742424            | -0.3194442    | *Brier score* | \[**2500000**, 500000, **200000**, 100000\]
+
+
+
+If we loosen the constraint that each test fold contributes equally, i.e., $$ \frac{1}{k} $$, to the global average,
+but still require that the mixing weights $$ w_{j} \in \mathbb{R}_{> 0} $$ and $$ \sum_{ j=1 }^{ k }{w_{j}} = 1 $$, then
+equation $$ \left( \ref{eq2} \right) $$ can be rewritten:
+
+$$
+\sum _{ j=1 }^{ k }{ w_{j} s \left( { \widehat { f }  }_{ \theta, { \mathcal{T}  }_{ j } }, \vect{x}_{\mathcal{T}_{ j }}, \vect{y}_{\mathcal{T}_{ j }}  \right) }
+$$
+
+meaning if
+
+$$
+\mathcal{L}_{ { \mathcal{T} }_{ j } } = { \frac { 1 }{ \left| { \mathcal{T} }_{ j } \right| } \sum _{ \left( x, y \right) \in { \mathcal{T} }_{ j } }{ \ell \left( x, y, { \widehat { f }  }_{ \theta, { \mathcal{T}  }_{ j } }\left( x \right)  \right)  }  } 
+$$
+
+then 
+
+$$
+\min_{ \left( x, y \right) \in { \mathcal{T}  }_{ j } } { \ell \left( x, y, { \widehat { f }  }_{ \theta, { \mathcal{T}  }_{ j } }\left( x \right)  \right)  } \le \mathcal{L}_{ { \mathcal{T} }_{ j } } \le \max_{ \left( x, y \right) \in { \mathcal{T}  }_{ j } } { \ell \left( x, y, { \widehat { f }  }_{ \theta, { \mathcal{T}  }_{ j } }\left( x \right)  \right)  }
+$$
+
+a
+
+$$
+\widehat{\theta} = \argmin_{\theta \in \Theta} \frac { 1 }{ k } \sum _{ j=1 }^{ k }{ \frac { 1 }{ \left| { \mathcal{T} }_{ j } \right| } \sum _{ \left( x, y \right) \in { \mathcal{T}  }_{ j } }{ \ell \left( x, y, { \widehat { f }  }_{ \theta, { \mathcal{T}  }_{ j } }\left( x \right)  \right)  }  }
+$$
+
 
 ## Scikit-learn
 
@@ -118,7 +238,7 @@ section of the scikit-learn documentation describes the structure of a scoring f
 `(estimator, X, y)` that returns a floating point number.  We can think of this as a function $$ s $$ that replaces
 
 $$
-{ \frac { 1 }{ \left| { \mathcal{T} }_{ j } \right| } \sum _{ \left( x, y \right) \in { \mathcal{T} }_{ j } }{ \ell \left( x, y, { \widehat { f }  }_{ \theta, { \mathcal{T}  }_{ j } }\left( x \right)  \right)  }  }  \label{eq2}\tag{2}
+{ \frac { 1 }{ \left| { \mathcal{T} }_{ j } \right| } \sum _{ \left( x, y \right) \in { \mathcal{T} }_{ j } }{ \ell \left( x, y, { \widehat { f }  }_{ \theta, { \mathcal{T}  }_{ j } }\left( x \right)  \right)  }  }
 $$
 
 in equation $$ \left( \ref{eq1} \right) $$.  $$ s $$ is in fact more general because .
