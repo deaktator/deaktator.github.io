@@ -26,8 +26,8 @@ enables operations like *sorting*, *min* and *max*.
 What happens if there's a bug in this comparison function?  Since its implementation is decoupled from the functions
 utilizing it, the correctness of the comparison function is independent of the algorithms (like *sort*, *min*
 and *max*) utilizing it.  Even though the *sort*, *min* or *max* algorithms may be correct, using a buggy comparison
-function may give wildly undesirable and inaccurate results.  This should not be surprising, but it should be noted 
-nonetheless.  Here's the motivating toy example.
+function may give wildly undesirable and inaccurate results.  This should not be surprising, but it should nonetheless
+be noted.  Here's the motivating toy example.
 
 Comparing [floating point](https://en.wikipedia.org/wiki/IEEE_754) representations of
 [real](https://en.wikipedia.org/wiki/Real_number) values is [isomorphic](http://mathworld.wolfram.com/Isomorphic.html)
@@ -89,8 +89,9 @@ importance weighting can be used to unwind these biases introduced in the sampli
 idea that importance weighting is consistently applied during training *and validation*.  The fact that scikit-learn
 incorporates importance weights in training but not validation during cross validation means that models learn a
 distribution different than the one used to measure their efficacy.  This is a manifestation of  the same problem we
-sought to solve through importance weighting in the first place.  *See the rub?*  What is most impactful is that this
-problem appears inside the code that helps to sort (or rank) models in relation to their efficacy.
+sought to eliminate with importance weighting in the first place.  *See the rub?*  What is most impactful is that this
+problem appears inside the code that helps to sort (or rank) models in relation to their efficacy.  To start to
+understand the issue more thoroughly, we'll have to look at a little math.
 $$
 \newcommand{\vect}[1]{\boldsymbol{#1}}
 \DeclareMathOperator*{\argmin}{\arg\!\min}
@@ -133,8 +134,8 @@ $$
 $$
 
 If we loosen the constraint that each test fold $$ j $$ contributes equally to the global average
-(i.e., $$ \forall{j} \in \left\{ 1, \ldots, k \right\}, w_{j} = \frac{1}{k} $$), thereby making the outer summation a
-weighted average, then equation $$ \left( \ref{eq2} \right) $$ can be rewritten as:
+(i.e., $$ \forall{j} \in \left\{ 1, \ldots, k \right\}, w_{j} = \frac{1}{k} $$)—thereby making the outer summation a
+weighted average—then equation $$ \left( \ref{eq2} \right) $$ can be rewritten as:
 
 $$
 \frac{ \sum _{ j=1 }^{ k }{ w_{j} s \left( { \widehat { f }  }_{ \theta, { \mathcal{T}  }_{ j } }, \vect{x}_{\mathcal{T}_{ j }}, \vect{y}_{\mathcal{T}_{ j }}  \right) } }{ \sum _{ j=1 }^{ k }{ w_{j} } } \label{eq3}\tag{3}
@@ -144,8 +145,8 @@ $$
 ## Introducing Importance Weights
 
 To introduce importance weights into cross validation, $$ \mathcal{T}_{ j } $$ can be extended to include an importance
-weight vector, $$ \vect{w}_{\mathcal{T}_{ j }} $$, with the same indices in $$ \vect{x}_{\mathcal{T}_{ j }} $$ and
-$$ \vect{y}_{\mathcal{T}_{ j }} $$ and the scoring function, $$ s $$, is extended to accept the importance weights, 
+weight vector, $$ \vect{w}_{\mathcal{T}_{ j }} \in  \mathbb{R}_{\ge 0}^{\left| \mathcal{T}_{ j } \right|}$$, with the same indices in $$ \vect{x}_{\mathcal{T}_{ j }} $$ and
+$$ \vect{y}_{\mathcal{T}_{ j }} $$. The scoring function, $$ s $$, is also extended to accept the importance weights: 
 $$ s \left( { \widehat { f }  }_{ \theta, { \mathcal{T} }_{ j } }, \vect{x}_{\mathcal{T}_{ j }}, \vect{y}_{\mathcal{T}_{ j }}, \vect{w}_{\mathcal{T}_{ j }} \right) $$.
 Then equation $$ \left( \ref{eq3} \right) $$ becomes:
 
@@ -153,51 +154,101 @@ $$
 \frac{ \sum _{ j=1 }^{ k }{ w_{j} s \left( { \widehat { f }  }_{ \theta, { \mathcal{T}  }_{ j } }, \vect{x}_{\mathcal{T}_{ j }}, \vect{y}_{\mathcal{T}_{ j }}, \vect{w}_{\mathcal{T}_{ j }}  \right) } }{ \sum _{ j=1 }^{ k }{ w_{j} } } \label{eq4}\tag{4}
 $$
 
-If we let $$ w_{j} = \left \lVert { \vect{w}_{\mathcal{T}_{ j } } } \right \rVert _{L_{1}} $$, then
+If we let $$ w_{j} = \left \lVert { \vect{w}_{\mathcal{T}_{ j } } } \right \rVert _{1} $$, then
 $$ \left( \ref{eq4} \right) $$ can be rewritten as:
 
 $$
-\frac{ \sum _{ j=1 }^{ k }{ \left \lVert { \vect{w}_{\mathcal{T}_{ j } } } \right \rVert _{L_{1}} s \left( { \widehat { f }  }_{ \theta, { \mathcal{T}  }_{ j } }, \vect{x}_{\mathcal{T}_{ j }}, \vect{y}_{\mathcal{T}_{ j }}, \vect{w}_{\mathcal{T}_{ j }}  \right) } }{ \sum _{ j=1 }^{ k }{ \left \lVert { \vect{w}_{\mathcal{T}_{ j } } } \right \rVert _{L_{1}} } } \label{eq5}\tag{5}
+\frac{ \sum _{ j=1 }^{ k }{ \left \lVert { \vect{w}_{\mathcal{T}_{ j } } } \right \rVert _{1} s \left( { \widehat { f }  }_{ \theta, { \mathcal{T}  }_{ j } }, \vect{x}_{\mathcal{T}_{ j }}, \vect{y}_{\mathcal{T}_{ j }}, \vect{w}_{\mathcal{T}_{ j }}  \right) } }{ \sum _{ j=1 }^{ k }{ \left \lVert { \vect{w}_{\mathcal{T}_{ j } } } \right \rVert _{1} } } \label{eq5}\tag{5}
 $$
 
 When I explained this to one of my colleagues, he was uneasy about the use of $$ \vect{w}_{\mathcal{T}_{ j } } $$ both
 inside $$ s $$ and in the mixing weight $$ w_{j} $$.  Looking at $$ \left( \ref{eq5} \right) $$, his concern made sense
 to me.  I realized that if $$ \vect{w}_{\mathcal{T}_{ j } } $$ was normalized (by the $$ L_{1} $$ norm), and it did not
-affect the results, then $$ \left \lVert { \vect{w}_{\mathcal{T}_{ j } } } \right \rVert _{L_{1}} $$ would only be taken
+affect the results, then $$ \left \lVert { \vect{w}_{\mathcal{T}_{ j } } } \right \rVert _{1} $$ would only be taken
 into account once in the importance weighted cross validation estimate.  So I considered whether this was currently the
 case in scikit-learn and realized that all scoring functions that accept importance weights are invariant to
-$$ \left \lVert { \vect{w}_{\mathcal{T}_{ j } } } \right \rVert _{L_{1}} $$.  This can be seen in the
+$$ \left \lVert { \vect{w}_{\mathcal{T}_{ j } } } \right \rVert _{1} $$.  This can be seen in the
 [interactive proof](https://en.wikipedia.org/wiki/Interactive_proof_system) that I wrote with
 [hypothesis](https://hypothesis.readthedocs.io/en/latest/).  The proof can be found at 
 [https://gist.github.com/deaktator/94545f807f139eba2c8a15381f2495e0](https://gist.github.com/deaktator/94545f807f139eba2c8a15381f2495e0).
-After verifying this scale invariance in the scoring functions in scikit-learn that accept importance weights, I
-concluded that the final cross validation equation should be:
+After verifying the importance weight scale invariance of the built-in scoring functions in scikit-learn, I concluded
+that the final cross validation equation should be:
 
 $$
-\frac{ \sum _{ j=1 }^{ k }{ \left \lVert { \vect{w}_{\mathcal{T}_{ j } } } \right \rVert _{L_{1}} s \left( { \widehat { f }  }_{ \theta, { \mathcal{T}  }_{ j } }, \vect{x}_{\mathcal{T}_{ j }}, \vect{y}_{\mathcal{T}_{ j }}, \frac{ \vect{w}_{\mathcal{T}_{ j }} }{\left \lVert { \vect{w}_{\mathcal{T}_{ j } } } \right \rVert _{L_{1}}}  \right) } }{ \sum _{ j=1 }^{ k }{ \left \lVert { \vect{w}_{\mathcal{T}_{ j } } } \right \rVert _{L_{1}} } } \label{eq6}\tag{6}
+\frac{ \sum _{ j=1 }^{ k }{ \left \lVert { \vect{w}_{\mathcal{T}_{ j } } } \right \rVert _{1} s \left( { \widehat { f }  }_{ \theta, { \mathcal{T}  }_{ j } }, \vect{x}_{\mathcal{T}_{ j }}, \vect{y}_{\mathcal{T}_{ j }}, \frac{ \vect{w}_{\mathcal{T}_{ j }} }{\left \lVert { \vect{w}_{\mathcal{T}_{ j } } } \right \rVert _{1}}  \right) } }{ \sum _{ j=1 }^{ k }{ \left \lVert { \vect{w}_{\mathcal{T}_{ j } } } \right \rVert _{1} } } \label{eq6}\tag{6}
 $$
 
+In the case that the scoring function $$ s $$ is invariant to 
+$$ \left \lVert { \vect{w}_{\mathcal{T}_{ j } } } \right \rVert _{1} $$, then $$ \left( \ref{eq5} \right) $$ and
+$$ \left( \ref{eq6} \right) $$ are equivalent.
 
-## Some Examples
+
+## Test Results
 
 To verify the behavior of importance weighted cross validation, I devised the following unit test.
 
 <!-- Unit test showing the effect of importance weighting in sklearn. -->
 <script src="https://gist.github.com/deaktator/cd73dac7fea829a2e357deeb011a1ac1.js"></script>
 
-Desired               || scikit-learn ||metric        || sample_weight                     
---------------------- | ------------- | ------------- | ----------------------------------
-0.999999              |  0.5          | *accuracy*    | \[**1**, 999999, **1**, 999999\]          
-0.66666666            |  0.5          | *accuracy*    | \[**100000**, 200000, **100000**, 200000\]
-0.5                   |  *0.5*        | *accuracy*    | \[**100000**, 100000, **100000**, 100000\]
-0.66666666            |  0.5          | *accuracy*    | \[**200000**, 100000, **200000**, 100000\]
-0.999999              |  0.5          | *accuracy*    | \[**999999**, 1, **999999**, 1\]
-0.25000025            |  0.5          | *accuracy*    | \[**2000000**, 1000000, **1**, 999999\]
-2.5 x 10<sup>-7</sup> |  0.25         | *precision*   | \[**2000000**, 1000000, **1**, 999999\]
--0.5389724            | -0.8695388    | *log loss*    | \[**2500000**, 500000, **200000**, 100000\]
--0.1742424            | -0.3194442    | *Brier score* | \[**2500000**, 500000, **200000**, 100000\]
+This unit test looks at a few different scoring functions and some different importance weight vectors, but there are
+always two folds and two examples per fold.  The `sample_weight` vector is split into two folds, where the first two
+values represent the first fold and the second two values represent the second fold.  The bold-faced values represent
+the weight associated with the single positive example in the fold and the non-bold faced values represent the weight
+associated with the single negative example in the fold.  
+
+|---
+| Desired               | scikit-learn  | scoring fn    | sample_weight                     
+| :-------------------- | :------------ | :------------ | :---------------------------------
+| 0.999999              |  0.5          | *accuracy*    | \[**1**, 999999, **1**, 999999\]          
+| 0.66666666            |  0.5          | *accuracy*    | \[**100000**, 200000, **100000**, 200000\]
+| 0.5                   |  *0.5*        | *accuracy*    | \[**100000**, 100000, **100000**, 100000\]
+| 0.66666666            |  0.5          | *accuracy*    | \[**200000**, 100000, **200000**, 100000\]
+| 0.999999              |  0.5          | *accuracy*    | \[**999999**, 1, **999999**, 1\]
+| 0.25000025            |  0.5          | *accuracy*    | \[**2000000**, 1000000, **1**, 999999\]
+| 2.5 x 10<sup>-7</sup> |  0.25         | *precision*   | \[**2000000**, 1000000, **1**, 999999\]
+| -0.5389724            | -0.8695388    | *log loss*    | \[**2500000**, 500000, **200000**, 100000\]
+| -0.1742424            | -0.3194442    | *Brier score* | \[**2500000**, 500000, **200000**, 100000\]
+|===
+{:.deaktatortable}
 
 
+Since scikit-learn does not incorporate importance weights, the results are rather undesirable.  For instance, the
+accuracy value is always 0.5 since it only classifies one example per fold correctly.  If instead of importance weights,
+the data was replicated the number of times indicated by the importance weights, then scikit-learn's results would align
+with the desired importance weighted results when the size of the two folds were equal.  If data replication rather
+than importance weighting was employed and scikit-learn used weighted averaging across folds on the relative test fold
+sizes rather than simple averaging, then scikit-learn's results would align with the desired results.
+
+The need for weighted averaging can be seen when observing leave-one-out cross validation.  Since the scoring functions
+are invariant to the $$ L_{1} $$ norm of the `sample_weight` vector, importance weighted cross validation cannot work
+without weighted averaging across folds.
+
+One should pay extra close attention to the example with weights $$ \left[ 2000000, 1000000, 1, 999999\right]^T $$ and
+the *accuracy* metric.  Notice that the cross validation estimate is: 
+
+$$
+0.25000025 = \frac{1000001}{4000000} = \left( 1 - \frac{2000000}{3000000} \right) \frac{3000000}{4000000} + \frac{1}{1000000} \frac{1000000}{4000000}
+$$
+
+If the `sample_weight` vector were instead $$ \left[ 200, 100, 1, 99\right]^T $$, the accuracy estimate becomes
+**0.2525**.  To bolster the claim that weighted averaging offers better estimates than simple averaging when combining
+the *within*-fold estimates, we can calculate the expected accuracy when there is a population of **400** examples with
+**201** positive examples.  Using **201** positives of **400** examples and allowing the examples to fall into any fold
+allows us to calculate the expected accuracy over all possible fold combinations.  This can be calculated using the
+[hypergeometric distribution](https://en.wikipedia.org/wiki/Hypergeometric_distribution).  See
+[https://gist.github.com/deaktator/1080eca4c291070d009014f2f2d759ad](https://gist.github.com/deaktator/1080eca4c291070d009014f2f2d759ad)
+for details on how the following graph was created.
+
+![Expected Accuracy]({{ site.url }}/assets/20190222/exp_acc.png)
+
+This shows that the expected accuracy lies in the interval $$ \left[ 0.48029, 0.50003 \right] $$.  If simple averaging
+were used, the estimate would be:
+
+$$
+0.171666 = \frac{103}{600} = \left( 1 - \frac{200}{300} \right) \frac{1}{2} + \frac{1}{100} \frac{1}{2}
+$$
+
+which is directionally incorrect versus **0.2525** in relation to the above interval.   
 
 If we loosen the constraint that each test fold contributes equally, i.e., $$ \frac{1}{k} $$, to the global average,
 but still require that the mixing weights $$ w_{j} \in \mathbb{R}_{> 0} $$ and $$ \sum_{ j=1 }^{ k }{w_{j}} = 1 $$, then
