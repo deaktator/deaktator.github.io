@@ -142,7 +142,7 @@ $$
 $$
 
 
-## Introducing Importance Weights
+## Introducing Importance Weights into CV
 
 To introduce importance weights into cross validation, $$ \mathcal{T}_{ j } $$ can be extended to include an importance
 weight vector, $$ \vect{w}_{\mathcal{T}_{ j }} \in  \mathbb{R}_{\ge 0}^{\left| \mathcal{T}_{ j } \right|}$$, with the same indices in $$ \vect{x}_{\mathcal{T}_{ j }} $$ and
@@ -187,7 +187,7 @@ $$ \left( \ref{eq6} \right) $$ are equivalent.
 
 To verify the behavior of importance weighted cross validation, I devised the following unit test.
 
-<!-- Unit test showing the effect of importance weighting in sklearn. -->
+<!-- Unit test showing the effect of importance weighting in scikit-learn. -->
 <script src="https://gist.github.com/deaktator/cd73dac7fea829a2e357deeb011a1ac1.js"></script>
 
 This unit test looks at a few different scoring functions and some different importance weight vectors, but there are
@@ -213,7 +213,7 @@ associated with the single negative example in the fold.
 
 
 Since scikit-learn does not incorporate importance weights, the results are rather undesirable.  For instance, the
-accuracy value is always 0.5 since it only classifies one example per fold correctly.  If instead of importance weights,
+*accuracy* value is always **0.5** since it only correctly classifies one example per fold.  If instead of importance weights,
 the data was replicated the number of times indicated by the importance weights, then scikit-learn's results would align
 with the desired importance weighted results when the size of the two folds were equal.  If data replication rather
 than importance weighting was employed and scikit-learn used weighted averaging across folds on the relative test fold
@@ -221,7 +221,10 @@ sizes rather than simple averaging, then scikit-learn's results would align with
 
 The need for weighted averaging can be seen when observing leave-one-out cross validation.  Since the scoring functions
 are invariant to the $$ L_{1} $$ norm of the `sample_weight` vector, importance weighted cross validation cannot work
-without weighted averaging across folds.
+without weighted averaging across folds.  It would simply be regular unweighted leave-one-out cross validation.
+
+It is obvious from the *Table 1*, but it should be noted that the scikit-learn's cross validation metrics can under and 
+over predict the importance weighted estimate, sometimes rather dramatically.
 
 One should pay extra close attention to the example with weights $$ \left[ 2000000, 1000000, 1, 999999\right]^T $$ and
 the *accuracy* metric.  Notice that the cross validation estimate is: 
@@ -237,12 +240,13 @@ the *within*-fold estimates, we can calculate the expected accuracy when there i
 allows us to calculate the expected accuracy over all possible fold combinations.  This can be calculated using the
 [hypergeometric distribution](https://en.wikipedia.org/wiki/Hypergeometric_distribution).  See
 [https://gist.github.com/deaktator/1080eca4c291070d009014f2f2d759ad](https://gist.github.com/deaktator/1080eca4c291070d009014f2f2d759ad)
-for details on how the following graph was created.
+for details.  The expected accuracy results in the following graph where accuracy varies with the fold sizes.
 
 ![Expected Accuracy]({{ site.url }}/assets/20190222/exp_acc.png)
 
-This shows that the expected accuracy lies in the interval $$ \left[ 0.48029, 0.50003 \right] $$.  If simple averaging
-were used, the estimate would be:
+This graph shows that the expected accuracy lies in the interval $$ \left[ 0.48029, 0.50003 \right] $$; where in the
+interval depends on the fold sizes.  If simple averaging were used, the for the cross validation estimate with two
+folds would be:
 
 $$
 0.171666 = \frac{103}{600} = \left( 1 - \frac{200}{300} \right) \frac{1}{2} + \frac{1}{100} \frac{1}{2}
@@ -250,82 +254,54 @@ $$
 
 which is directionally incorrect versus **0.2525** in relation to the above interval.   
 
-If we loosen the constraint that each test fold contributes equally, i.e., $$ \frac{1}{k} $$, to the global average,
-but still require that the mixing weights $$ w_{j} \in \mathbb{R}_{> 0} $$ and $$ \sum_{ j=1 }^{ k }{w_{j}} = 1 $$, then
-equation $$ \left( \ref{eq2} \right) $$ can be rewritten:
+## "The Error in the Comparator" *Revisited*
+
+Finally, the punchline: the reason I deem this the problem "*Error in the Comparator*" is that as we've seen, the cross
+validation estimates in scikit-learn are not really in line with what one should expect.  The results using importance
+weighting with integer weights should be the same as performing cross validation with replicated data, but they are not
+the same under scikit-learn.  This is rather disconcerting.  When cross validation is used in hyper-parameter search,
+the cross validation estimates are used as a basis of comparison from which the "optimal" weights in the hyper-parameter
+space are selected.  This can be seen in the following equation that codifies hyper-parameter search, where $$ \theta $$
+represents a hyper-parameter setting in the hyper parameter space, $$ \Theta $$:
 
 $$
-\sum _{ j=1 }^{ k }{ w_{j} s \left( { \widehat { f }  }_{ \theta, { \mathcal{T}  }_{ j } }, \vect{x}_{\mathcal{T}_{ j }}, \vect{y}_{\mathcal{T}_{ j }}  \right) }
+\widehat{\theta} = \argmin_{\theta \in \Theta}{ \frac{ \sum _{ j=1 }^{ k }{ \left \lVert { \vect{w}_{\mathcal{T}_{ j } } } \right \rVert _{1} s \left( { \widehat { f }  }_{ \theta, { \mathcal{T}  }_{ j } }, \vect{x}_{\mathcal{T}_{ j }}, \vect{y}_{\mathcal{T}_{ j }}, \frac{ \vect{w}_{\mathcal{T}_{ j }} }{\left \lVert { \vect{w}_{\mathcal{T}_{ j } } } \right \rVert _{1}}  \right) } }{ \sum _{ j=1 }^{ k }{ \left \lVert { \vect{w}_{\mathcal{T}_{ j } } } \right \rVert _{1} } } } \label{eq7}\tag{7}
 $$
 
-meaning if
+## Discussion
 
-$$
-\mathcal{L}_{ { \mathcal{T} }_{ j } } = { \frac { 1 }{ \left| { \mathcal{T} }_{ j } \right| } \sum _{ \left( x, y \right) \in { \mathcal{T} }_{ j } }{ \ell \left( x, y, { \widehat { f }  }_{ \theta, { \mathcal{T}  }_{ j } }\left( x \right)  \right)  }  } 
-$$
+This issue has present since 2015.  Multiple open tickets have been on GitHub since April, 2015.
+[Issue 4632](https://github.com/scikit-learn/scikit-learn/issues/4632) (April 24, 2015) asks 
+"*should cross-validation scoring take sample-weights into account?*"
+[Issue 4497](https://github.com/scikit-learn/scikit-learn/issues/4497) (April 2, 2015) is concerned with API consistency
+and naming issues.  What, in my opinion, is so appalling about this is that these issues have been open for ***nearly
+four years!***  It seems that these tickets have been bogged down in naming conventions and API consistency and
+meanwhile, this issue has silently crept into many codebases.  scikit-learn has
+[very wide adoption](https://scikit-learn.org/stable/testimonials/testimonials.html).  The 
+[testimonials page](https://scikit-learn.org/stable/testimonials/testimonials.html) lists companies
+like [J.P.Morgan](https://www.jpmorgan.com/) and [Spotify](https://www.spotify.com/).  Now, let me pose the question,
+if you are investing money with [J.P.Morgan](https://www.jpmorgan.com/), would you not want hyper-parameter search to
+work as well as possible for the financial models built with scikit-learn?  If you have ever complained about music
+suggestion algorithms, would you not want a company like [Spotify](https://www.spotify.com/) using the best
+hyper-parameter search possible.  This is the scope of this problem.  ***It is a big problem!***  Arguments about naming
+conventions are an appropriate excuse in this case.
 
-then 
-
-$$
-\min_{ \left( x, y \right) \in { \mathcal{T}  }_{ j } } { \ell \left( x, y, { \widehat { f }  }_{ \theta, { \mathcal{T}  }_{ j } }\left( x \right)  \right)  } \le \mathcal{L}_{ { \mathcal{T} }_{ j } } \le \max_{ \left( x, y \right) \in { \mathcal{T}  }_{ j } } { \ell \left( x, y, { \widehat { f }  }_{ \theta, { \mathcal{T}  }_{ j } }\left( x \right)  \right)  }
-$$
-
-a
-
-$$
-\widehat{\theta} = \argmin_{\theta \in \Theta} \frac { 1 }{ k } \sum _{ j=1 }^{ k }{ \frac { 1 }{ \left| { \mathcal{T} }_{ j } \right| } \sum _{ \left( x, y \right) \in { \mathcal{T}  }_{ j } }{ \ell \left( x, y, { \widehat { f }  }_{ \theta, { \mathcal{T}  }_{ j } }\left( x \right)  \right)  }  }
-$$
-
-
-## Scikit-learn
-
-Scikit-learn has
-[many cross validation routines](https://scikit-learn.org/stable/modules/classes.html#splitter-functions) like
-[GridSearchCV](https://scikit-learn.org/stable/modules/generated/sklearn.model_selection.GridSearchCV.html) and
-[RandomizedSearchCV](https://scikit-learn.org/stable/modules/generated/sklearn.model_selection.RandomizedSearchCV.html)
-that admit a [scoring](https://scikit-learn.org/stable/modules/model_evaluation.html#scoring-parameter) function.
-The *["Implementing your own scoring object"](https://scikit-learn.org/stable/modules/model_evaluation.html#implementing-your-own-scoring-object)*
-section of the scikit-learn documentation describes the structure of a scoring function as a function with arguments
-`(estimator, X, y)` that returns a floating point number.  We can think of this as a function $$ s $$ that replaces
-
-$$
-{ \frac { 1 }{ \left| { \mathcal{T} }_{ j } \right| } \sum _{ \left( x, y \right) \in { \mathcal{T} }_{ j } }{ \ell \left( x, y, { \widehat { f }  }_{ \theta, { \mathcal{T}  }_{ j } }\left( x \right)  \right)  }  }
-$$
-
-in equation $$ \left( \ref{eq1} \right) $$.  $$ s $$ is in fact more general because .
-
-## Other
-
-In the machine learning literature, one would be hard-pressed to find a paper that does not contain something similar
-to:
-
-$$
-\widehat{\theta} = arg \min_{\theta} \mathcal{l}(y, f_{\theta}(X))
-$$
-
-as $$ \widehat{\theta} $$ represents the parameters to the model $$ f_{\theta} $$, trained on $$ X $$ that minimizes
-the [loss function](https://en.wikipedia.org/wiki/Loss_function), $$ \mathcal{l} $$.  This is where the trouble comes.
-When attempting to optimize the loss, the loss function does not incorporate the importance weight
-
-<!--
-\left( x_{ i },{ y }_{ i } \right) \sim D\\ g\left( x \right) { =E }_{ D }\left\[ { y }|{ x } \right\]
--->
+The biggest problem that I see is that while it has been a known issue for years (and there have been
+[pull requests](https://help.github.com/en/articles/about-pull-requests) to attempt to fix this), but people have been
+so apathetic that these fixes solutions fall by the wayside.  See the *GitHub issues* listed above for more context.
+Meanwhile, there is no indication that the problem is actually occurring.  No warnings are emitted, no errors raised or
+exceptions thrown: nothing.
 
 
-<!--
-{ \widehat { R }  }_{ kCV }^{ \left( n \right)  }\quad \equiv \quad \frac { 1 }{ k } \sum _{ j=1 }^{ k }{ \frac { 1 }{ \left| { \tau  }_{ j } \right|  } \sum _{ \left( x,y \right) \in { \tau  }_{ j } }{ \ell \left( x,y,{ \widehat { f }  }_{ { \tau  }_{ j } }\left( x; \theta \right)  \right)  }  }
+## Pull Requests
 
-{ \widehat { R }  }_{ kIWCV }^{ \left( n \right)  }\quad \equiv \quad \frac { 1 }{ k } \sum _{ j=1 }^{ k }{ \frac { 1 }{ \left| { \tau  }_{ j } \right|  } \sum _{ \left( x,y \right) \in { \tau  }_{ j } }{ \frac { { p }_{ test }\left( x \right)  }{ { p }_{ train }\left( x; theta \right)  } \ell \left( x,y,{ \widehat { f }  }_{ { \tau  }_{ j } }\left( x \right)  \right)  }  }
-
-p\left( x \right) =\frac { { p }_{ test }\left( x \right)  }{ { p }_{ train }\left( x \right)  }
-
-{ c }_{ j }=\frac { \left| { \left\{ { \tau  }_{ i } \right\}  }_{ i\neq j } \right|  }{ \left| { \tau  }_{ j } \right|  }
-
-{ p }_{ j }\left( x \right) =\frac { { p }_{ { test }_{ j } }\left( x \right)  }{ { p }_{ { train }_{ j } }\left( x \right)  }
-
-{ p }_{ j }\left( x \right) =\frac { { p }_{ { test }_{ j } }\left( x \right)  }{ { p }_{ { train }_{ j } }\left( x \right)  } =\frac { { S }_{ j }\left( x \right)  }{ { 1-S }_{ j }\left( x \right)  }
--->
-
+I do not feel it is right to not saying anything.  I fixed this issue in internal forks but this issue deserves real
+consideration. This problem needs to be addressed with the gravity it is due.  I have created pull requests for both scikit-learn
+([https://github.com/scikit-learn/scikit-learn/pull/12345](https://github.com/scikit-learn/scikit-learn/pull/12345)) and
+a distributed version for [dask](https://dask.org/) 
+([https://github.com/dask/dask-ml/pull/12345](https://github.com/dask/dask-ml/pull/12345)) in the hope that this will
+benefit others.  I created this post to point out the problem and its gravity along with a viable fix.
+*Please give this issue the importance it deserves.*
 
 ## License 
 
