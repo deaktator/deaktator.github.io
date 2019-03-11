@@ -34,7 +34,7 @@ importance weights but not tested using importance weights, they are trained on 
 used during validation.  **[\[4\]](#ref4)** shows that different hyper-parameters can indeed be returned when
 importance weighting is considered during metric calculations in cross validation.
 
-## Out of the sandbox and into the fire
+## Problem Description
 
 While attempting to use importance weighting in a particular problem setting, I noticed that the metrics reported in
 [scikit-learn](https://scikit-learn.org/stable/index.html)'s
