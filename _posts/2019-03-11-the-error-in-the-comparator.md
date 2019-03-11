@@ -1,7 +1,7 @@
 ---
 layout: post
 title:  "The Error in the Comparator"
-date:   2019-03-06 00:00:00
+date:   2019-03-11 09:00:00
 categories: stats probability machine-learning python
 ---
 
@@ -232,7 +232,7 @@ allows us to calculate the expected accuracy over all possible fold combinations
 [hypergeometric distribution](https://en.wikipedia.org/wiki/Hypergeometric_distribution).  See **[\[3\]](#ref3)** for
 details.  The expected accuracy results in the following graph where accuracy varies with the fold sizes.
 
-![Expected Accuracy]({{ site.url }}/assets/20190306/exp_acc.png)
+![Expected Accuracy]({{ site.url }}/assets/20190311/exp_acc.png)
 
 This graph shows that the expected accuracy lies in the interval $$ \left[ 0.48029, 0.50003 \right] $$; where in the
 interval depends on the fold sizes.  If simple averaging were used, the 2-fold cross validation estimate would be:
