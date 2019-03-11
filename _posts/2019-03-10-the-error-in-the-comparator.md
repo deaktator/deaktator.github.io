@@ -271,9 +271,10 @@ meanwhile, this issue has silently crept into many codebases.  scikit-learn has
 [testimonials page](https://scikit-learn.org/stable/testimonials/testimonials.html) lists companies
 like [J.P.Morgan](https://www.jpmorgan.com/) and [Spotify](https://www.spotify.com/).  Now, let me pose the question:
 if you are investing money with [J.P.Morgan](https://www.jpmorgan.com/), would you not want hyper-parameter search to
-work as well as possible for the financial models built with scikit-learn? if you have ever complained about music
-recommendation algorithms, would you not want a company like [Spotify](https://www.spotify.com/) using the best
-hyper-parameter search possible.  This is the scope of this problem.  ***It is a big problem!***  Arguments about naming
+use the training distribution as the basis for selecting hyper-parameters for financial models built with scikit-learn?
+if you have ever complained about music recommendation algorithms, would you not want a company like
+[Spotify](https://www.spotify.com/) to use the same distribution for training and model validation?
+This is the scope of this problem.  ***It is a big problem!***  Arguments about naming
 conventions are not an appropriate excuse for letting this issue fall through the cracks.
 
 The biggest problem that I see is that this issue has for years been a known problem (and there have been
@@ -294,9 +295,9 @@ a problem arising due to our willingness to implicitly trust testing and validat
 
 I fixed this issue in internal forks but this issue deserves real consideration. This problem needs to be addressed
 with the gravity it is due.  I have created pull requests for both scikit-learn
-([https://github.com/scikit-learn/scikit-learn/pull/12345](https://github.com/scikit-learn/scikit-learn/pull/12345)) and
+([https://github.com/scikit-learn/scikit-learn/pull/13432](https://github.com/scikit-learn/scikit-learn/pull/13432)) and
 a distributed version for [dask](https://dask.org/)
-([https://github.com/dask/dask-ml/pull/12345](https://github.com/dask/dask-ml/pull/12345)) in the hope that this will
+([https://github.com/dask/dask-ml/pull/481](https://github.com/dask/dask-ml/pull/481)) in the hope that this will
 benefit others.  I created this post to point out the problem and its gravity along with a viable fix.
 *Please give this issue the importance it deserves.*
 
