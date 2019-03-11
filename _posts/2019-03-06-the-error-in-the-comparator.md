@@ -7,10 +7,9 @@ categories: stats probability machine-learning python
 
 ### *Or, [scikit-learn](https://scikit-learn.org/stable/index.html)'s importance weighting is broken.*
 
-*If the title doesn't immediately give you chills, it should.  Allow me to explain.*
+## Introduction
 
-It will help to devise a motivating toy example to illustrate the point before diving into the particular
-manifestation of this problem that gave me chills when I first discovered it.
+*If the title doesn't immediately give you chills, it should.  Allow me to explain.*
 
 Defining what is meant by *comparator* is important.  By
 *[comparator](https://en.wikipedia.org/wiki/Comparator)*, I mean a
@@ -27,27 +26,17 @@ But what happens if there's a bug in this comparison function?  Since its implem
 utilizing it, the correctness of the comparison function is independent of the algorithms (like *sort*, *min*
 and *max*) utilizing it.  Even though the *sort*, *min* or *max* algorithms may be correct, using a buggy comparison
 function may give undesirable and wildly inaccurate results.  This should not be surprising, but it should nonetheless
-be noted.  Here's the motivating toy example.
+be noted.
 
-Comparing [floating point](https://en.wikipedia.org/wiki/IEEE_754) representations of non-negative
-[real](https://en.wikipedia.org/wiki/Real_number) values is [isomorphic](http://mathworld.wolfram.com/Isomorphic.html)
-to comparing ordered pairs where the first element in the pair is the whole number component of the real value
-and the second element is the [mantissa](http://mathworld.wolfram.com/Mantissa.html) of the real value.  Transforming
-floating point values into ordered pairs like this, for comparison, will give the same ascending sort order as when
-sorting directly on the original floating point values.
-
-<!-- Python example of correct and buggy key functions. -->
-<script src="https://gist.github.com/deaktator/6e622833691c0ebf66c7335c2915cc17.js"></script>
-
-`buggy_key_fn` has a bug that rears its ugly head when the minimum in `loss_values` is sought.  If we look at the
-impact of the bug in terms of [relative error](http://mathworld.wolfram.com/RelativeError.html), we see that it is
-rather large: [9.999999998 × 10<sup>9</sup>](https://www.wolframalpha.com/input/?i=(1-10%5E-10+-+10%5E-10)%2F10%5E-10).
-
+scikit-learn optimizes algorithm hyper-parameters during cross validation without considering importance weights in the
+metric computations used as a basis for comparing hyper-parameter configurations.   Because models are trained with
+importance weights but not tested using importance weights, they are trained on a different distribution than the one
+used during validation.  **[\[4\]](#ref4)** shows that different hyper-parameters can indeed be returned when
+importance weighting is considered during metric calculations in cross validation.
 
 ## Out of the sandbox and into the fire
 
-With the basics out of the way, it's time to bring the real problem to center stage.  While attempting to use
-importance weighting in a particular problem setting, I noticed that the metrics reported in
+While attempting to use importance weighting in a particular problem setting, I noticed that the metrics reported in
 [scikit-learn](https://scikit-learn.org/stable/index.html)'s
 [cross validation](https://en.wikipedia.org/wiki/Cross-validation_(statistics)) routine seemed odd.  I dug into the
 issue and slowly started realizing that while [importance weighting](https://en.wikipedia.org/wiki/Importance_sampling)
@@ -311,11 +300,20 @@ a distributed version for [dask](https://dask.org/)
 benefit others.  I created this post to point out the problem and its gravity along with a viable fix.
 *Please give this issue the importance it deserves.*
 
-#### *(to be continued in part II...)*
+
+#### *(Part II will further discuss **[\[1\]](#ref1)**.)*
+
+
+## Author's Note
+
+There may be nothing especially novel in this article.  There are no proofs of correctness, merely
+evidence supporting the existence of flaws in the cross validation routines in scikit-learn.
+
 
 ## License
 
 The above code is released under the [MIT License](http://opensource.org/licenses/MIT), Copyright (c) 2019 Ryan Deak.
+
 
 ## References
 
@@ -328,6 +326,7 @@ The above code is released under the [MIT License](http://opensource.org/license
 1. <a name="ref3"></a>Deak, Ryan. "hypergeom_sklearn_imp_wt.py" Gist,
    [https://gist.github.com/deaktator/1080eca4c291070d009014f2f2d759ad](https://gist.github.com/deaktator/1080eca4c291070d009014f2f2d759ad)
    Accessed 5 Mar. 2019.
-
+1. <a name="ref4"></a>Deak, Ryan. "wt_cv_eval_is_diff_unwt_cv.py" Gist,
+   [https://gist.github.com/deaktator/644086d0093b94fab567388f8008fe19](https://gist.github.com/deaktator/644086d0093b94fab567388f8008fe19)
 
 <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
