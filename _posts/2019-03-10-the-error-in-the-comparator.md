@@ -5,7 +5,7 @@ date:   2019-03-10 21:00:00
 categories: stats probability machine-learning python
 ---
 
-### *Or, [scikit-learn](https://scikit-learn.org/stable/index.html)'s importance weighting is broken.*
+### *Or, [scikit-learn](https://scikit-learn.org/stable/index.html)'s importance weighting in CV is broken.*
 
 ## Introduction
 
