@@ -1,7 +1,7 @@
 ---
 layout: post
 title:  "The Error in the Comparator"
-date:   2019-03-05 19:25:00
+date:   2019-03-06 00:00:00
 categories: stats probability machine-learning python
 ---
 
@@ -16,7 +16,7 @@ Defining what is meant by *comparator* is important.  By
 *[comparator](https://en.wikipedia.org/wiki/Comparator)*, I mean a
 [total ordering](https://en.wikipedia.org/wiki/Total_order) on a set.  Different programming languages call this binary
 relation by different names:  *Java* calls it a
-[Comparator](https://docs.oracle.com/javase/8/docs/api/java/util/Comparator.html), *Scala* an 
+[Comparator](https://docs.oracle.com/javase/8/docs/api/java/util/Comparator.html), *Scala* an
 [Ordering](https://www.scala-lang.org/files/archive/api/current/scala/math/Ordering.html), Haskell calls it
 [Ord](http://hackage.haskell.org/package/base-4.12.0.0/docs/Data-Ord.html) and python admits a
 *[key](https://docs.python.org/3.6/howto/sorting.html#key-functions)* function to establish order.  Hopefully, the
@@ -42,7 +42,8 @@ sorting directly on the original floating point values.
 `buggy_key_fn` has a bug that rears its ugly head when the minimum in `loss_values` is sought.  If we look at the
 impact of the bug in terms of [relative error](http://mathworld.wolfram.com/RelativeError.html), we see that it is
 rather large: [9.999999998 × 10<sup>9</sup>](https://www.wolframalpha.com/input/?i=(1-10%5E-10+-+10%5E-10)%2F10%5E-10).
- 
+
+
 ## Out of the sandbox and into the fire
 
 With the basics out of the way, it's time to bring the real problem to center stage.  While attempting to use
@@ -53,7 +54,7 @@ issue and slowly started realizing that while [importance weighting](https://en.
 has been available in the metric calculations themselves since 2014
 ([PR 3098](https://github.com/scikit-learn/scikit-learn/pull/3098) and
 [PR 3401](https://github.com/scikit-learn/scikit-learn/pull/3401)), the `sample_weight` parameter in the metrics isn't
-being populated from the cross validation routines (see 
+being populated from the cross validation routines (see
 [_validation.py](https://github.com/scikit-learn/scikit-learn/blob/0.20.2/sklearn/model_selection/_validation.py) and
 [_search.py](https://github.com/scikit-learn/scikit-learn/blob/0.20.2/sklearn/model_selection/_search.py)).
 Consequently, hyper-parameter optimization
@@ -73,7 +74,7 @@ while only having samples generated from a different distribution than the distr
 —[https://en.wikipedia.org/wiki/Importance_sampling](https://en.wikipedia.org/wiki/Importance_sampling)
 
 It is typical that, during the (training) data generation phase of a modeling process, the sample distribution used in
-training is not representative of the population to which a learned model will be applied.  This is a form of 
+training is not representative of the population to which a learned model will be applied.  This is a form of
 [sampling bias](https://en.wikipedia.org/wiki/Sampling_bias) that can have a detrimental effect when assessing model
 quality:
 
@@ -98,12 +99,12 @@ $$
 $$
 ## Cross Validation
 
-Assume we have a training set $$ \mathcal{T} = {\{ \left( x_{i}, y_{i} \right) \}}_{i=1}^{n} $$ of size $$ n $$, 
+Assume we have a training set $$ \mathcal{T} = {\{ \left( x_{i}, y_{i} \right) \}}_{i=1}^{n} $$ of size $$ n $$,
 split into $$ k $$ disjoint non-empty subsets, $$ {\{ \mathcal{T}_{i} \}}_{i=1}^{k} $$.  Given  parameters
 $$ \theta \in \Theta $$, let $$ { \widehat { f }  }_{ \theta, { \mathcal{T}  }_{ j } } $$ be a function
 trained on $$ {\{ \mathcal{T}_{i} \}}_{i \ne j} $$ and validated on test fold,
 $$ { \mathcal{T}  }_{ j } $$. Then, given a  [loss function](https://en.wikipedia.org/wiki/Loss_function),
-$$ \ell $$, we can formally define $$ k $$-fold cross validation as: 
+$$ \ell $$, we can formally define $$ k $$-fold cross validation as:
 
 $$
 \frac { 1 }{ k } \sum _{ j=1 }^{ k }{ \frac { 1 }{ \left| { \mathcal{T} }_{ j } \right| } \sum _{ \left( x, y \right) \in { \mathcal{T}  }_{ j } }{ \ell \left( x, y, { \widehat { f }  }_{ \theta, { \mathcal{T}  }_{ j } }\left( x \right)  \right)  }  } \label{eq1}\tag{1}
@@ -117,8 +118,8 @@ formulation, the average loss of each test fold has the same contribution in the
 size.
 
 
-## Abstracting Cross Validation 
- 
+## Abstracting Cross Validation
+
 We can abstract equation $$ \left( \ref{eq1} \right) $$ by replacing the *within*-fold average loss with a more general
 scoring function
 $$ s \left( { \widehat { f }  }_{ \theta, { \mathcal{T}  }_{ j } }, \vect{x}_{\mathcal{T}_{ j }}, \vect{y}_{\mathcal{T}_{ j }}  \right) \in \mathbb{R}$$,
@@ -146,7 +147,7 @@ $$
 
 To introduce importance weights into cross validation, $$ \mathcal{T}_{ j } $$ can be extended to include an importance
 weight vector, $$ \vect{w}_{\mathcal{T}_{ j }} \in  \mathbb{R}_{\ge 0}^{\left| \mathcal{T}_{ j } \right|}$$, with the same indices in $$ \vect{x}_{\mathcal{T}_{ j }} $$ and
-$$ \vect{y}_{\mathcal{T}_{ j }} $$. The scoring function, $$ s $$, is also extended to accept the importance weights: 
+$$ \vect{y}_{\mathcal{T}_{ j }} $$. The scoring function, $$ s $$, is also extended to accept the importance weights:
 $$ s \left( { \widehat { f }  }_{ \theta, { \mathcal{T} }_{ j } }, \vect{x}_{\mathcal{T}_{ j }}, \vect{y}_{\mathcal{T}_{ j }}, \vect{w}_{\mathcal{T}_{ j }} \right) $$.
 Then equation $$ \left( \ref{eq3} \right) $$ becomes:
 
@@ -177,7 +178,7 @@ $$
 \frac{ \sum _{ j=1 }^{ k }{ \left \lVert { \vect{w}_{\mathcal{T}_{ j } } } \right \rVert _{1} s \left( { \widehat { f }  }_{ \theta, { \mathcal{T}  }_{ j } }, \vect{x}_{\mathcal{T}_{ j }}, \vect{y}_{\mathcal{T}_{ j }}, \frac{ \vect{w}_{\mathcal{T}_{ j }} }{\left \lVert { \vect{w}_{\mathcal{T}_{ j } } } \right \rVert _{1}}  \right) } }{ \sum _{ j=1 }^{ k }{ \left \lVert { \vect{w}_{\mathcal{T}_{ j } } } \right \rVert _{1} } } \label{eq6}\tag{6}
 $$
 
-In the case that the scoring function $$ s $$ is invariant to 
+In the case that the scoring function $$ s $$ is invariant to
 $$ \left \lVert { \vect{w}_{\mathcal{T}_{ j } } } \right \rVert _{1} $$, then $$ \left( \ref{eq5} \right) $$ and
 $$ \left( \ref{eq6} \right) $$ are equivalent.
 
@@ -193,12 +194,12 @@ This unit test looks at a few different scoring functions and some different imp
 always two folds and two examples per fold.  The `sample_weight` vector is split into two folds, where the first two
 values represent the first fold and the second two values represent the second fold.  The bold-faced values represent
 the weight associated with the single positive example in the fold and the non-bold faced values represent the weight
-associated with the single negative example in the fold.  
+associated with the single negative example in the fold.
 
 |---
-| Desired               | scikit-learn  | scoring fn    | sample_weight                     
+| Desired               | scikit-learn  | scoring fn    | sample_weight
 | :-------------------- | :------------ | :------------ | :---------------------------------
-| 0.999999              |  0.5          | *accuracy*    | \[**1**, 999999, **1**, 999999\]          
+| 0.999999              |  0.5          | *accuracy*    | \[**1**, 999999, **1**, 999999\]
 | 0.66666666            |  0.5          | *accuracy*    | \[**100000**, 200000, **100000**, 200000\]
 | 0.5                   |  *0.5*        | *accuracy*    | \[**100000**, 100000, **100000**, 100000\]
 | 0.66666666            |  0.5          | *accuracy*    | \[**200000**, 100000, **200000**, 100000\]
@@ -228,7 +229,7 @@ It is obvious from the *Table 1*, but it should be noted that the scikit-learn's
 over predict the importance weighted estimate, sometimes rather dramatically.
 
 One should pay extra close attention to the example with weights $$ \left[ 2000000, 1000000, 1, 999999\right]^T $$ and
-the *accuracy* metric.  Notice that the cross validation estimate is: 
+the *accuracy* metric.  Notice that the cross validation estimate is:
 
 $$
 0.25000025 = \frac{1000001}{4000000} = \left( 1 - \frac{2000000}{3000000} \right) \frac{3000000}{4000000} + \frac{1}{1000000} \frac{1000000}{4000000}
@@ -242,7 +243,7 @@ allows us to calculate the expected accuracy over all possible fold combinations
 [hypergeometric distribution](https://en.wikipedia.org/wiki/Hypergeometric_distribution).  See **[\[3\]](#ref3)** for
 details.  The expected accuracy results in the following graph where accuracy varies with the fold sizes.
 
-![Expected Accuracy]({{ site.url }}/assets/20190222/exp_acc.png)
+![Expected Accuracy]({{ site.url }}/assets/20190306/exp_acc.png)
 
 This graph shows that the expected accuracy lies in the interval $$ \left[ 0.48029, 0.50003 \right] $$; where in the
 interval depends on the fold sizes.  If simple averaging were used, the 2-fold cross validation estimate would be:
@@ -251,7 +252,8 @@ $$
 0.171666 = \frac{103}{600} = \left( 1 - \frac{200}{300} \right) \frac{1}{2} + \frac{1}{100} \frac{1}{2}
 $$
 
-which is directionally incorrect versus **0.2525** in relation to the above interval.   
+which is directionally incorrect versus **0.2525** in relation to the above interval.
+
 
 ## "The Error in the Comparator" *Revisited*
 
@@ -270,13 +272,13 @@ $$
 ## Discussion
 
 This issue has present since 2015.  Multiple open tickets have been on [GitHub](https://github.com) since April 2015.
-[Issue 4632](https://github.com/scikit-learn/scikit-learn/issues/4632) (April 24, 2015) asks 
+[Issue 4632](https://github.com/scikit-learn/scikit-learn/issues/4632) (April 24, 2015) asks
 "*should cross-validation scoring take sample-weights into account?*"
 [Issue 4497](https://github.com/scikit-learn/scikit-learn/issues/4497) (April 2, 2015) is concerned with API consistency
 and naming issues.  What, in my opinion, is so appalling about this is that these issues have been open for ***nearly
 four years***!  It seems that these tickets have been bogged down in naming conventions and API consistency and
 meanwhile, this issue has silently crept into many codebases.  scikit-learn has
-[very wide adoption](https://scikit-learn.org/stable/testimonials/testimonials.html).  The 
+[very wide adoption](https://scikit-learn.org/stable/testimonials/testimonials.html).  The
 [testimonials page](https://scikit-learn.org/stable/testimonials/testimonials.html) lists companies
 like [J.P.Morgan](https://www.jpmorgan.com/) and [Spotify](https://www.spotify.com/).  Now, let me pose the question:
 if you are investing money with [J.P.Morgan](https://www.jpmorgan.com/), would you not want hyper-parameter search to
@@ -304,14 +306,14 @@ a problem arising due to our willingness to implicitly trust testing and validat
 I do not feel it is right to not saying anything.  I fixed this issue in internal forks but this issue deserves real
 consideration. This problem needs to be addressed with the gravity it is due.  I have created pull requests for both scikit-learn
 ([https://github.com/scikit-learn/scikit-learn/pull/12345](https://github.com/scikit-learn/scikit-learn/pull/12345)) and
-a distributed version for [dask](https://dask.org/) 
+a distributed version for [dask](https://dask.org/)
 ([https://github.com/dask/dask-ml/pull/12345](https://github.com/dask/dask-ml/pull/12345)) in the hope that this will
 benefit others.  I created this post to point out the problem and its gravity along with a viable fix.
 *Please give this issue the importance it deserves.*
 
 #### *(to be continued in part II...)*
 
-## License 
+## License
 
 The above code is released under the [MIT License](http://opensource.org/licenses/MIT), Copyright (c) 2019 Ryan Deak.
 
@@ -320,12 +322,12 @@ The above code is released under the [MIT License](http://opensource.org/license
 1. <a name="ref1"></a>Sugiyama, Masashi, Matthias Krauledat, and Klaus-Robert Muller.
    "[Covariate shift adaptation by importance weighted cross validation](http://www.jmlr.org/papers/volume8/sugiyama07a/sugiyama07a.pdf)."
    Journal of Machine Learning Research 8. May (2007): 985-1005.
-1. <a name="ref2"></a>Deak, Ryan. "sklearn_scorer_wt_invariant.py" Gist, 
+1. <a name="ref2"></a>Deak, Ryan. "sklearn_scorer_wt_invariant.py" Gist,
    [https://gist.github.com/deaktator/94545f807f139eba2c8a15381f2495e0](https://gist.github.com/deaktator/94545f807f139eba2c8a15381f2495e0).
-   Accessed 5 Mar. 2019. 
+   Accessed 5 Mar. 2019.
 1. <a name="ref3"></a>Deak, Ryan. "hypergeom_sklearn_imp_wt.py" Gist,
    [https://gist.github.com/deaktator/1080eca4c291070d009014f2f2d759ad](https://gist.github.com/deaktator/1080eca4c291070d009014f2f2d759ad)
    Accessed 5 Mar. 2019.
 
-   
+
 <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
