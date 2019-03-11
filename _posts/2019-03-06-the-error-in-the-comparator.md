@@ -81,7 +81,7 @@ incorporates importance weights in training but not validation during cross vali
 distribution different than the one used to measure their efficacy.  This is a manifestation of  the same problem we
 sought to eliminate with importance weighting in the first place.  *See the rub?*  What is most consequential is that
 this problem appears inside the code that helps to sort (or rank) models in relation to their efficacy.  To start to
-understand the issue more thoroughly, we'll have to look at a little math.
+understand the issue more thoroughly, we'll have to look at the definition of cross validation.
 $$
 \newcommand{\vect}[1]{\boldsymbol{#1}}
 \DeclareMathOperator*{\argmin}{\arg\!\min}
@@ -260,8 +260,8 @@ $$
 
 ## Discussion
 
-This issue has present since 2015.  Multiple open tickets have been on [GitHub](https://github.com) since April 2015.
-[Issue 4632](https://github.com/scikit-learn/scikit-learn/issues/4632) (April 24, 2015) asks
+This issue has bean present in scikit-learn since 2015.  Multiple open tickets have been on [GitHub](https://github.com)
+since April 2015.  [Issue 4632](https://github.com/scikit-learn/scikit-learn/issues/4632) (April 24, 2015) asks
 "*should cross-validation scoring take sample-weights into account?*"
 [Issue 4497](https://github.com/scikit-learn/scikit-learn/issues/4497) (April 2, 2015) is concerned with API consistency
 and naming issues.  What, in my opinion, is so appalling about this is that these issues have been open for ***nearly
@@ -292,8 +292,8 @@ a problem arising due to our willingness to implicitly trust testing and validat
 
 ## Pull Requests
 
-I do not feel it is right to not saying anything.  I fixed this issue in internal forks but this issue deserves real
-consideration. This problem needs to be addressed with the gravity it is due.  I have created pull requests for both scikit-learn
+I fixed this issue in internal forks but this issue deserves real consideration. This problem needs to be addressed
+with the gravity it is due.  I have created pull requests for both scikit-learn
 ([https://github.com/scikit-learn/scikit-learn/pull/12345](https://github.com/scikit-learn/scikit-learn/pull/12345)) and
 a distributed version for [dask](https://dask.org/)
 ([https://github.com/dask/dask-ml/pull/12345](https://github.com/dask/dask-ml/pull/12345)) in the hope that this will
@@ -307,7 +307,7 @@ benefit others.  I created this post to point out the problem and its gravity al
 ## Author's Note
 
 There may be nothing especially novel in this article.  There are no proofs of correctness, merely
-evidence supporting the existence of flaws in the cross validation routines in scikit-learn.
+evidence in the form of tests supporting the existence of flaws in the cross validation routines in scikit-learn.
 
 
 ## License
