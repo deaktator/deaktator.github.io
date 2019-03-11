@@ -250,7 +250,7 @@ Finally, the punchline: the reason I deem this problem the "*Error in the Compar
 validation estimates in scikit-learn are not really in line with what one should expect.  The results using importance
 weighting with integer weights should be the same as performing cross validation with replicated data, but they are not
 the same under scikit-learn.  This is rather disconcerting.  When cross validation is used in hyper-parameter search,
-the cross validation estimates are used as a basis of comparison from which the "optimal" weights in the hyper-parameter
+the cross validation estimates are used as a basis of comparison from which the "optimal" values in the hyper-parameter
 space are selected.  This can be seen in the following equation that codifies hyper-parameter search, where $$ \theta $$
 represents a hyper-parameter setting in the hyper-parameter space, $$ \Theta $$:
 
