@@ -268,12 +268,12 @@ and naming issues.  What, in my opinion, is so appalling about this is that thes
 four years***!  It seems that these tickets have been bogged down in naming conventions and API consistency and
 meanwhile, this issue has silently crept into many codebases.  scikit-learn has
 [very wide adoption](https://scikit-learn.org/stable/testimonials/testimonials.html).  The
-[testimonials page](https://scikit-learn.org/stable/testimonials/testimonials.html) lists companies
-like [J.P.Morgan](https://www.jpmorgan.com/) and [Spotify](https://www.spotify.com/).  Now, let me pose the question:
-if you are investing money with [J.P.Morgan](https://www.jpmorgan.com/), would you not want hyper-parameter search to
-use the training distribution as the basis for selecting hyper-parameters for financial models built with scikit-learn?
-if you have ever complained about music recommendation algorithms, would you not want a company like
-[Spotify](https://www.spotify.com/) to use the same distribution for training and model validation?
+[testimonials page](https://scikit-learn.org/stable/testimonials/testimonials.html) lists leading financial institutions
+as well as prominent tech companies as adopters.  Now, let me pose the question:
+if you are investing money with a financial institution that uses scikit-learn for financial modeling, would you not
+want hyper-parameter search to use the training distribution as the basis for selecting hyper-parameters in those
+financial models? if you have ever complained about music recommendation algorithms, would you not want a company
+invested in making music recommendations to use the same distribution for training and model validation?
 This is the scope of this problem.  ***It is a big problem!***  Arguments about naming
 conventions are not an appropriate excuse for letting this issue fall through the cracks.
 
