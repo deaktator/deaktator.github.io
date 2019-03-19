@@ -176,11 +176,11 @@ $$ k = 10^7 $$.
 
 All benchmarking source data used to create these visualizations is available here:
 
-* ["{{ site.url }}/assets/20190318/data/const_time_approx.tsv]("{{ site.url }}/assets/20190318/data/const_time_approx.tsv)
-* ["{{ site.url }}/assets/20190318/data/const_time_approx_small_values.tsv]("{{ site.url }}/assets/20190318/data/const_time_approx_small_values.tsv)
-* ["{{ site.url }}/assets/20190318/data/d_10000_1000000.tsv]("{{ site.url }}/assets/20190318/data/d_10000_1000000.tsv)
-* ["{{ site.url }}/assets/20190318/data/d_10000000.tsv]("{{ site.url }}/assets/20190318/data/d_10000000.tsv)
-* ["{{ site.url }}/assets/20190318/data/keq1.tsv]("{{ site.url }}/assets/20190318/data/keq1.tsv)
+* [{{ site.url }}/assets/20190318/data/const_time_approx.tsv]({{ site.url }}/assets/20190318/data/const_time_approx.tsv)
+* [{{ site.url }}/assets/20190318/data/const_time_approx_small_values.tsv]({{ site.url }}/assets/20190318/data/const_time_approx_small_values.tsv)
+* [{{ site.url }}/assets/20190318/data/d_10000_1000000.tsv]({{ site.url }}/assets/20190318/data/d_10000_1000000.tsv)
+* [{{ site.url }}/assets/20190318/data/d_10000000.tsv]({{ site.url }}/assets/20190318/data/d_10000000.tsv)
+* [{{ site.url }}/assets/20190318/data/keq1.tsv]({{ site.url }}/assets/20190318/data/keq1.tsv)
 
 <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/vis/4.21.0/vis.js"></script>
 <script type="text/javascript" src="{{ site.url }}/assets/20190318/approx.js"></script>
