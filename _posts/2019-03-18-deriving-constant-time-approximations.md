@@ -238,7 +238,7 @@ var options_log_speed = {
   keepAspectRatio: true,
   xLabel: 'n',
   yLabel: 'k',
-  zLabel: 'log10(t_A - t_E)',
+  zLabel: 'log10(t_E / t_A)',
   cameraPosition: {
     horizontal: -4.71238898038469,  // -1.5 pi
     vertical: 0,
