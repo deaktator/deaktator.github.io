@@ -6,7 +6,7 @@ categories: math programming
 ---
 
 A few years ago, just before going on a vacation, I came across some code in
-a code base similar to this:
+a codebase similar to this:
 
 <script src="https://gist.github.com/deaktator/88d4e8a790f7f0f34a5c2912a2bb4a7b.js"></script>
 
@@ -23,7 +23,7 @@ replacing our $$O(K)$$ code.
 
 The purpose of this post isn't to show some revolutionary new idea or result,
 but to share the *process* of tracking down and optimizing certain types of
-algorithmic inefficiencies in a code base.
+algorithmic inefficiencies in a codebase.
 
 ## Steps
 
