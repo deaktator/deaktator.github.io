@@ -155,7 +155,7 @@ Finally, *how good is the approximation?*  Try it out for yourself.  All of the 
 Notice that the surface created by the approximation is virtually indistinguishable by visual inspection.  To
 see just how good the function is, a difference plot is in order.  The $$ z $$-values are created by the function:
 
-$$ z\left( n, k \right) = sign \left( A \left( n, k \right) - E \left( n, k \right) \right) \log_{10} \left( 10^{-300} + \left| A \left( n, k \right) - E \left( n, k \right) \right| \right) $$
+$$ z\left( n, k \right) = -sign \left( A \left( n, k \right) - E \left( n, k \right) \right) \log_{10} \left( 10^{-300} + \left| A \left( n, k \right) - E \left( n, k \right) \right| \right) $$
 
 where $$ A \left( n, k \right) $$ is the constant time approximation function and the $$ E \left( n, k \right) $$ is
 the exact function.  $$ \epsilon = 10^{-300} $$ is added to the absolute value of the difference in order to avoid
@@ -219,9 +219,9 @@ var options_log_diff = {
   keepAspectRatio: true,
   xLabel: 'n',
   yLabel: 'k',
-  zLabel: 'log10(A - E)',
+  zLabel: 'z(n, k)',
   cameraPosition: {
-    horizontal: 0.8,
+    horizontal: 0.4,
     vertical: 0,
     distance: 1.75
   }
