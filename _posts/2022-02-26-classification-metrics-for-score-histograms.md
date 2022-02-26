@@ -79,7 +79,7 @@ Beta distribution, the reader is encouraged to try other distributions and
 other parameter settings like `digits_precision` in
 `cm_stats_by_threshold_binned` to see how the method degrades.
 
-**NOTE**: The integration code is very simple.  For strategies to better
+**NOTE**: The code here is simplified.  For strategies to better
 account for interpolation issues, see
 [The relationship between Precision-Recall and ROC curves](https://dl.acm.org/doi/10.1145/1143844.1143874)
 from ICML, 2006.
