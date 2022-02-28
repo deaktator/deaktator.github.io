@@ -6,7 +6,8 @@ categories: statistics
 ---
 
 In a previous post, [Metrics for Calibrated Classifiers]({% post_url 2019-05-20-metrics-for-calibrated-classifiers %}), a method was provided to compute confusion matrix
-statistics and derived metrics.  It was noted that:
+statistics and derived metrics, based on only a distribution of scores produced
+by a well calibrated classifier.  It was noted that:
 
 > since the confusion matrix estimates can be determined at any threshold,
 > curves like precision-recall curves and ROC curves can be determined
