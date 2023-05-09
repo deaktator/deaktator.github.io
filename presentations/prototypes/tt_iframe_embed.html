@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang=en>
+<head>
+<meta charset=utf-8>
+<title>TT View</title>
+</head>
+<body>
+<script>
+​
+function insertEmbed(htmlCode) {
+    let elem = document.createElement("div");
+    elem.id = `_content_embed_container`;
+    elem.innerHTML = htmlCode;
+    document.body.appendChild(elem);
+​
+    // NOTE: 'elem' (above) should contain the below script but doesn't load.
+    //       A work around is to load by inserting a JS-created script.
+    let s = document.createElement("script");
+    s.setAttribute("src", "https://www.tiktok.com/embed.js");
+    document.body.appendChild(s);
+}
+​
+function createAndInsertEmbed(username, cid) {
+    fetch(`https://www.tiktok.com/oembed?url=https://www.tiktok.com/@${username}/video/${cid}`)
+        .then(res => res.json())
+        .then(out => insertEmbed(out["html"]))
+        .catch(err => { throw err });
+}
+​
+function main() {
+    // https://stackoverflow.com/a/901144
+    const params = new Proxy(new URLSearchParams(window.location.search), {
+        get: (searchParams, prop) => searchParams.get(prop),
+    });
+​
+    // Assumes a valid URL
+    const [username, cid] = params.url
+        .replace('https://www.tiktok.com/@', '')
+        .replace('video/', '')
+        .split("/");
+​
+    console.log(`Loading iframe for username: "${username}" video: "${cid}"  url: ${params.url}`);
+    createAndInsertEmbed(username, cid);
+}
+​
+main();
+​
+</script>
+</body>
+</html>
