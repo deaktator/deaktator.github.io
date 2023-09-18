@@ -18,7 +18,7 @@ chores with a score, $$ S $$.
     according to $$ P_1 $$?
 2.	Does $$ S $$ represent that $$ C $$ performed $$ T $$ satisfactorily,
     according to $$ P_2 $$?
-3.	Is $$ S $$ ***necessarily*** a reflection of $$ C $$’s performance?
+3.	Is $$ S $$ *necessarily* a reflection of $$ C $$’s performance?
 4.	Under which conditions does $$ C $$ simultaneously satisfy $$ P_1 $$ and $$ P_2 $$?
 5.	How should $$ C $$ be fairly assessed?
 6.  Should $$ P_1 $$ consider $$ P_2 $$ when assessing $$ C $$?
@@ -35,19 +35,21 @@ chores with a score, $$ S $$.
 5.	By whether $$ C $$ satisfies requirements provided to $$ C $$.
 6.	Yes.  This is really another way to state (5), since $$ P_2 $$ provides
     requirements to $$ C $$.
-7. Then better align $$ P_1 $$ and $$ P_2 $$.  See (4).
+7.  Then better align $$ P_1 $$ and $$ P_2 $$, so that performance according
+    to $$ P_2 $$'s requirements is indicative of performance according to
+    $$ P_1 $$'s requirements.  See (4).
 
 
 
 ### Example 1: Bleeched Red Shirt
 
-While walking out the door for the day, a parent asks the child to wash a red
+While walking out the door one day, a parent asks the child to wash a red
 shirt.  Not knowing how to wash a red shirt, the child asks the other parent
-how to wash the shirt.  The second parents instructs the child to use
+how to wash the shirt.  The second parent instructs the child to use
 non-color-safe bleech.  The child does as instructed by both parents.  The
-shirt turns a bright uniform pink.  The child is grounded by the first parent.
-Is this reasonable?  Of course not.  *After all, the child did an excellent
-job bleeching the shirt!*
+outcome is that the shirt turns a bright uniform pink and the child is grounded
+by the first parent.  Is this reasonable?  Of course not.  *After all, the
+child did an excellent job bleeching the shirt, as instructed!*
 
 
 ### Example 2: Insubordination in [*The Rings of Power*](https://www.imdb.com/title/tt7631058/)
@@ -78,7 +80,8 @@ assumes the role of $$ P_1 $$, then to use the data for evaluatation of the
 model on an environment $$ P_2 $$, $$ P_1 $$ should be aligned or in the very
 least account for the differences between $$ P_2 $$.  Otherwise, the model
 $$ C $$ could work very well in fulfillment of its responsibilities under
-$$ P_2 $$, and appear to fail without explanation.
+$$ P_2 $$, and appear to fail without explanation under $$ P_1 $$, when the
+explantation could just be that the execution and validation environments differ.
 
 
 <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
