@@ -73,7 +73,7 @@ because its message extends beyond machine learning to science, in general, and 
 programming.  I think this is why our science teachers drilled the
 idea of [unit conversion](https://en.wikipedia.org/wiki/Conversion_of_units#Factor-label_method)
 into our heads, from an early age.  I think it's also why I've always preferred to program
-with [type safety](https://en.wikipedia.org/wiki/Type_safety) in mind and preferred
+with [type safety](https://en.wikipedia.org/wiki/Type_safety) in mind and prefer
 [static](https://en.wikipedia.org/wiki/Type_system#Static_type_checking) to
 [dynamic](https://en.wikipedia.org/wiki/Type_system#Dynamic_type_checking_and_runtime_type_information) typing.
 
