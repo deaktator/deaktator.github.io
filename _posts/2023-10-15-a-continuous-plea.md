@@ -51,8 +51,8 @@ a minor point. Let us avoid that trap."
 
 > "Third, and most importantly, empiricism"
 
-> "we show \[**the incorrect solution** ~~the Bernoulli VAE~~\] significantly
-underperforms the \[**the correct solution** ~~the continuous Bernoulli VAE~~\]
+> "we show the \["**incorrect solution**" ~~Bernoulli VAE~~\] significantly
+underperforms the \["**correct solution**" ~~continuous Bernoulli VAE~~\]
 across a range of evaluation metrics, models, and datasets."
 
 ## 4th &#182;: *Care about types, units, etc.*
