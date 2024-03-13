@@ -133,12 +133,19 @@ $$
 
 ### Visual Explanation:
 
-Note the relationship, \\( S(n) = 4 n (n + 1) + 1\\), can be seen visually
-in the following animation.  Each \\( n (n + 1) \\) can be represented as a rectangle.
-Below we see 4 rectangles: greenish, blue/purple, red/orange, yellowish.  There is one
-addition green square in the center.  Slowly click the animation a few times to see that
-the regardless of how the rectangles are tightly packed around the center square, there
-are four distinct, visually noticeable rectangles.
+In the following animation, where \\( n \\) is set to equal 4, we can visually observe
+the relationship, \\( S(n) = 4 n (n + 1) + 1\\).  Because \\( n = 4 \\) in this example
+animation, each triangle should be made up of 4 rectangular strips.
+
+Each \\( n (n + 1) \\) can be represented as a rectangle.  Below we see 4 rectangles:
+greenish, blue/purple, red/orange, yellowish.  There is one addition green square in
+the center.  When added, the areas of these 4 rectangles along with the small center
+square equal \\( S(n) \\).  In this case, where \\( n = 4 \\), 
+\\( S(4) = 4 \times 4 \times 5 + 1 = 81\\).
+
+Slowly click the animation a few times to see that the regardless of how the rectangles
+are tightly packed around the center square, there are four distinct, visually
+noticeable rectangles.
 
 <div id="svg_container_1" class="svg_container"></div>
 <div class="caption">[ <em>👆click image to animate</em> ]</div>
