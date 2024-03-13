@@ -44,8 +44,8 @@ The idea for this article came about while watching *The Floor* with my family a
 asking questions to my child (in elementary school).  The goal is provide real-world
 applications and a further explanation of
 [mathematically induction](https://en.wikipedia.org/wiki/Mathematical_induction) to someone
-who has seen a brief introduction, but not much experience.  Explanations and derivations
-will be more thorough than usual articles, because less mathmetical knowledge
+who has seen a brief introduction, but who does not have much experience.  Explanations and
+derivations will be more thorough than usual articles, because less mathmetical knowledge
 is assumed.
 
 ## Introduction
